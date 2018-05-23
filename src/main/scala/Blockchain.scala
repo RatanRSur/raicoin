@@ -10,9 +10,7 @@ class Blockchain(private val blocks: Seq[Block] = Seq(RootBlock)) extends Seq[Bl
   def length: Int = blocks.length
 
   def mineBlock(transactions: Seq[Transaction], miner: String, newUsers: Set[String]): Blockchain = {
-    val candidate = new MinedBlock(this.last, transactions, miner, newUsers)
-    assert(candidate.isValid)
-    this :+ candidate
+    this :+ new MinedBlock(this.last, transactions, miner, newUsers)
   }
 
 }

@@ -1,9 +1,11 @@
 abstract class Block {
   val ledger: Ledger
+  val isValid: Boolean
 }
 
 object RootBlock extends Block {
   val ledger = new Ledger(Map.empty)
+  val isValid = true
 }
 
 class MinedBlock(
@@ -12,11 +14,13 @@ class MinedBlock(
   val miner: String,
   val newUsers: Set[String]) extends Block {
 
-
   val ledger = prevBlock.ledger
     .addUsers(newUsers)
     .rewardMiner(miner)
     .applyTransactions(transactions)
 
-  val isValid = transactions.forall { t => ledger(t.sender).balance >= 0 }
+  val isValid =
+    ledger.isValid &&
+    transactions.forall(_.isValid) &&
+    transactions.nonEmpty
 }
