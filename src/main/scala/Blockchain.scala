@@ -9,9 +9,11 @@ class Blockchain(private val blocks: Seq[Block] = Seq(new RootBlock())) extends 
 
   // Members declared in SeqLike
   def apply(idx: Int): Block = blocks(idx)
-  def length: Int = blocks.length
+  def length: Int            = blocks.length
 
-  def mineBlock(transactions: Seq[Transaction], miner: String, newUsers: Seq[String]=Seq.empty): Blockchain = {
+  def mineBlock(transactions: Seq[Transaction],
+                miner: String,
+                newUsers: Seq[String] = Seq.empty): Blockchain = {
     this :+ new MinedBlock(this.last, transactions, miner, newUsers)
   }
 
