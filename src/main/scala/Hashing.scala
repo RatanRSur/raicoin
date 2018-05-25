@@ -41,4 +41,3 @@ trait SHAHashable {
     val hashDependencies = Seq(string.getBytes("UTF-8"))
   }
 }
-
