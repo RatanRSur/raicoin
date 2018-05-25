@@ -1,4 +1,6 @@
-class Blockchain(private val blocks: Seq[Block] = Seq(RootBlock)) extends Seq[Block] {
+import scala.collection.SortedSet
+
+class Blockchain(private val blocks: Seq[Block] = Seq(new RootBlock())) extends Seq[Block] {
 
   private implicit def toChain(seq: Seq[Block]): Blockchain = new Blockchain(seq)
 
@@ -9,7 +11,7 @@ class Blockchain(private val blocks: Seq[Block] = Seq(RootBlock)) extends Seq[Bl
   def apply(idx: Int): Block = blocks(idx)
   def length: Int = blocks.length
 
-  def mineBlock(transactions: Seq[Transaction], miner: String, newUsers: Set[String]): Blockchain = {
+  def mineBlock(transactions: Seq[Transaction], miner: String, newUsers: Seq[String]=Seq.empty): Blockchain = {
     this :+ new MinedBlock(this.last, transactions, miner, newUsers)
   }
 

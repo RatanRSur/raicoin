@@ -1,26 +1,30 @@
+import scala.collection.immutable.ListMap
+import scala.collection.SortedSet
+
 class Ledger(
-  private val ledger: Map[String, User],
-  val negativeAccounts: Set[String] = Set.empty) extends Map[String, User] {
+  private val internalLedger: ListMap[String, User] = ListMap.empty,
+  val negativeAccounts: SortedSet[String] = SortedSet.empty) extends Iterable[(String, User)] with SHAHashable {
+
+  //convenience
+  def apply(x: String): User = internalLedger(x)
+  def +(kv: (String, User)): Ledger = {
+    val (userName, balance) = (kv._1, kv._2.balance)
+    val newNegativeAccounts = if (balance >= 0) negativeAccounts - userName
+                              else negativeAccounts + userName
+    new Ledger(internalLedger + kv, newNegativeAccounts)
+  }
+  def contains(userName: String): Boolean = internalLedger.contains(userName)
+  //from Iterable
+  val iterator = internalLedger.iterator
 
   val isValid = negativeAccounts.isEmpty
 
-  implicit def toLedger(m: Map[String, User]) = new Ledger(m, negativeAccounts)
-  // Members declared in immutable.Map
-  def +[V1 >: User](kv: (String, V1)): Ledger = {
-    val (userName, user) = kv
-    user match {
-      case u: User => new Ledger(ledger + (userName -> u), negativeAccounts)
-      case _ => throw new IllegalArgumentException()
-    }
-  }
-  // Members declared in MapLike
-  def -(key: String): Ledger = new Ledger(ledger - key, negativeAccounts - key)
-  def get(key: String): Option[User] = ledger.get(key)
-  def iterator: Iterator[(String, User)] = ledger.iterator
-
   def rewardMiner(miner: String): Ledger = increase(miner, 1)
-  def addUsers(userNames: Set[String]): Ledger = (ledger /: userNames) {
-    (ledger, userName) => ledger + (userName -> User())
+  def addUsers(userNames: Seq[String]): Ledger = (this /: userNames) {
+    (ledger, userName) => {
+      require(!ledger.contains(userName))
+      ledger + (userName -> User())
+    }
   }
 
   def applyTransactions(transactions: Seq[Transaction]): Ledger = {
@@ -31,21 +35,17 @@ class Ledger(
     }
   }
 
+  val hashDependencies = Seq[SHAHashable](internalLedger, negativeAccounts).map(_.hash)
+
+
   private def transfer(senderName: String, recipientName: String, amount: Int): Ledger = {
     increase(recipientName, amount).decrease(senderName, amount)
   }
-
-
   private def decrease(userName: String, amount: Int): Ledger = changeBalance(userName, amount, _-_)
   private def increase(userName: String, amount: Int): Ledger = changeBalance(userName, amount, _+_)
   private def changeBalance(userName: String, amount: Int, op: (Int, Int) => Int): Ledger = {
     require(amount > 0)
-    val newBalance = op(ledger(userName).balance, amount)
-    val newLedger = if (newBalance < 0) inTheRed(userName)
-                    else                inTheBlack(userName)
-    newLedger + (userName -> User(newBalance))
+    val newBalance = op(internalLedger(userName).balance, amount)
+    this + (userName -> User(newBalance))
   }
-
-  private def inTheBlack(userName: String): Ledger = new Ledger(ledger, negativeAccounts - userName)
-  private def inTheRed(userName: String): Ledger = new Ledger(ledger, negativeAccounts + userName)
 }
