@@ -26,7 +26,7 @@ trait SHAHashable {
     val hashDependencies = collection.map(_.hash).toSeq
   }
 
-  implicit class HashableListMap(collection: ListMap[String, User]) extends SHAHashable {
+  implicit class HashableListMap(collection: ListMap[String, Long]) extends SHAHashable {
     val hashDependencies = collection.flatMap { case (k, v) => Seq(k.hash, v.hash) }.toSeq
   }
 
