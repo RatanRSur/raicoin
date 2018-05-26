@@ -1,5 +1,7 @@
 import scala.collection.immutable.ListMap
 import scala.collection.SortedSet
+import scala.util.{Try, Success, Failure}
+import Exceptions._
 
 class Ledger(private val internalLedger: ListMap[String, Long] = ListMap.empty,
              val negativeAccounts: SortedSet[String] = SortedSet.empty)
@@ -19,18 +21,20 @@ class Ledger(private val internalLedger: ListMap[String, Long] = ListMap.empty,
   //from Iterable
   val iterator = internalLedger.iterator
 
-  val isValid = negativeAccounts.isEmpty
-
   def rewardMiner(miner: String): Ledger = increase(miner, 1)
   def addUsers(userNames: Seq[String]): Ledger = (this /: userNames) { (ledger, userName) =>
-    require(!ledger.contains(userName))
+    customRequire(!ledger.contains(userName), new UserAlreadyExists(userName))
     ledger + (userName -> 0)
   }
 
-  def applyTransactions(transactions: Seq[Transaction]): Ledger = {
-    (this /: transactions) { (ledg, transaction) =>
+  def applyTransactions(transactions: Seq[Transaction]): Try[Ledger] = {
+    val ret = (this /: transactions) { (ledg, transaction) =>
       ledg.transfer(transaction.sender, transaction.recipient, transaction.amount)
     }
+    customRequire(
+      ret.negativeAccounts.isEmpty,
+      new IllegalTransactions(s"${negativeAccounts.mkString(", ")} have negative balances"))
+    Success(ret)
   }
 
   val hashDependencies = Seq[SHAHashable](internalLedger, negativeAccounts).map(_.hash)

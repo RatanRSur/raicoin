@@ -1,14 +1,13 @@
 import scala.util.Random
 import scala.collection.SortedSet
 import java.security.MessageDigest
+import scala.util.{Try, Success, Failure}
 
 abstract class Block extends SHAHashable {
   val ledger: Ledger
-  val isValid: Boolean
 }
 
 class RootBlock(val ledger: Ledger = new Ledger()) extends Block {
-  val isValid            = true
   val hashDependencies   = Seq()
   override lazy val hash = Array.fill(32)((Random.nextInt(256) - 128).toByte)
 }
@@ -24,11 +23,7 @@ class MinedBlock(val previousBlock: Block,
       .addUsers(newUsers)
       .rewardMiner(miner)
       .applyTransactions(transactions)
-
-  val isValid =
-    ledger.isValid &&
-      transactions.forall(_.isValid) &&
-      transactions.nonEmpty
+      .get
 
   val timestamp = java.util.Calendar.getInstance.getTimeInMillis
   val hashDependencies =
