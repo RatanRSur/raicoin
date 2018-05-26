@@ -37,8 +37,8 @@ class BlockchainSpec extends FunSuite {
     val transactions = Seq(Transaction("vecna", "tiamat", 1))
     val newChain     = chain.mineBlock(transactions, "vecna", Seq("vecna", "tiamat"))
     assert(newChain.size === 2)
-    assert(newChain.last.ledger("vecna").balance === 0)
-    assert(newChain.last.ledger("tiamat").balance === 1)
+    assert(newChain.last.ledger("vecna") === 0)
+    assert(newChain.last.ledger("tiamat") === 1)
   }
 
   test("can't send more tokens than you have") {
@@ -64,7 +64,7 @@ class BlockchainSpec extends FunSuite {
   test("blockchain hash chain is solid all the way back") {
     val randomUserNames = Seq.fill(10)(randomUserName).toSet
     val testLedger = (new Ledger() /: randomUserNames) { (ledger, user) =>
-      ledger + (user, User(10))
+      ledger + (user -> 50000000000L)
     }
     val randomTransactions = (0 until 10).map { _ =>
       val sender    = random(randomUserNames)

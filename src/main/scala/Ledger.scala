@@ -1,15 +1,15 @@
 import scala.collection.immutable.ListMap
 import scala.collection.SortedSet
 
-class Ledger(private val internalLedger: ListMap[String, User] = ListMap.empty,
+class Ledger(private val internalLedger: ListMap[String, Long] = ListMap.empty,
              val negativeAccounts: SortedSet[String] = SortedSet.empty)
-    extends Iterable[(String, User)]
+    extends Iterable[(String, Long)]
     with SHAHashable {
 
   //convenience
-  def apply(x: String): User = internalLedger(x)
-  def +(kv: (String, User)): Ledger = {
-    val (userName, balance) = (kv._1, kv._2.balance)
+  def apply(x: String): Long = internalLedger(x)
+  def +(kv: (String, Long)): Ledger = {
+    val (userName, balance) = kv
     val newNegativeAccounts =
       if (balance >= 0) negativeAccounts - userName
       else negativeAccounts + userName
@@ -24,7 +24,7 @@ class Ledger(private val internalLedger: ListMap[String, User] = ListMap.empty,
   def rewardMiner(miner: String): Ledger = increase(miner, 1)
   def addUsers(userNames: Seq[String]): Ledger = (this /: userNames) { (ledger, userName) =>
     require(!ledger.contains(userName))
-    ledger + (userName -> User())
+    ledger + (userName -> 0)
   }
 
   def applyTransactions(transactions: Seq[Transaction]): Ledger = {
@@ -35,16 +35,16 @@ class Ledger(private val internalLedger: ListMap[String, User] = ListMap.empty,
 
   val hashDependencies = Seq[SHAHashable](internalLedger, negativeAccounts).map(_.hash)
 
-  private def transfer(senderName: String, recipientName: String, amount: Int): Ledger = {
+  def transfer(senderName: String, recipientName: String, amount: Long): Ledger = {
     increase(recipientName, amount).decrease(senderName, amount)
   }
-  private def decrease(userName: String, amount: Int): Ledger =
+  private def decrease(userName: String, amount: Long): Ledger =
     changeBalance(userName, amount, _ - _)
-  private def increase(userName: String, amount: Int): Ledger =
+  private def increase(userName: String, amount: Long): Ledger =
     changeBalance(userName, amount, _ + _)
-  private def changeBalance(userName: String, amount: Int, op: (Int, Int) => Int): Ledger = {
+  private def changeBalance(userName: String, amount: Long, op: (Long, Long) => Long): Ledger = {
     require(amount > 0)
-    val newBalance = op(internalLedger(userName).balance, amount)
-    this + (userName -> User(newBalance))
+    val newBalance = op(internalLedger(userName), amount)
+    this + (userName -> newBalance)
   }
 }
