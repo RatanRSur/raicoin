@@ -1,5 +1,7 @@
+import Exceptions._
+
 case class Transaction(val sender: String, val recipient: String, val amount: Int)
     extends SHAHashable {
-  val isValid          = sender != recipient
+  customRequire(sender != recipient, new IllegalTransactions(s"sender cannot also be recipient"))
   val hashDependencies = Seq[SHAHashable](sender, recipient, amount).map(_.hash)
 }
