@@ -2,7 +2,7 @@ import scala.collection.SortedSet
 import scala.util.{Try, Success, Failure}
 import Exceptions._
 
-class Blockchain(private val blocks: Seq[Block] = Seq(new RootBlock())) extends Seq[Block] {
+class Blockchain(val blocks: Seq[Block] = Seq(new RootBlock())) extends Seq[Block] {
 
   private def :+(block: Block) = new Blockchain(blocks :+ block)
 
@@ -20,5 +20,7 @@ class Blockchain(private val blocks: Seq[Block] = Seq(new RootBlock())) extends 
                   new IllegalTransactions("No transactions to put in block."))
     this :+ new MinedBlock(this.last, transactions, miner, newUsers)
   }
+
+  override val toString: String = s"${getClass.getName}(\n  ${blocks.mkString("\n  ")}))"
 
 }
