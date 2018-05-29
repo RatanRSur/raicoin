@@ -47,7 +47,7 @@ class BlockchainSpec extends FunSuite {
   }
 
   test("can't send more tokens than you have") {
-    val transactions = Seq(Transaction("vecna", "tiamat", 1), Transaction("vecna", "tiamat", 6))
+    val transactions = Seq(Transaction("vecna", "tiamat", 5), Transaction("tiamat", "vecna", 5))
     assertThrows[IllegalTransactions] {
       new Blockchain().mineBlock(transactions, "vecna", Seq("vecna", "tiamat")).get
     }
