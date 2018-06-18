@@ -15,10 +15,10 @@ class Blockchain(private val blocks: Seq[Block] = Seq(new RootBlock())) extends 
 
   def mineBlock(transactions: Seq[Transaction],
                 miner: String,
-                newUsers: Seq[String] = Seq.empty): Try[Blockchain] = {
+                newUsers: Seq[String] = Seq.empty): Blockchain = {
     customRequire(transactions.nonEmpty,
                   new IllegalTransactions("No transactions to put in block."))
-    Try(new MinedBlock(this.last, transactions, miner, newUsers)).map(block => this :+ block)
+    this :+ new MinedBlock(this.last, transactions, miner, newUsers)
   }
 
 }

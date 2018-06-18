@@ -22,7 +22,6 @@ class BlockchainSpec extends FunSuite {
     val chain =
       new Blockchain()
         .mineBlock(Seq(Transaction("vecna", "tiamat", 1)), "vecna", Seq("vecna", "tiamat"))
-        .get
     assert(chain.size === 2)
     assert(chain.last.ledger.size === 2)
   }
@@ -31,16 +30,15 @@ class BlockchainSpec extends FunSuite {
     val chain =
       new Blockchain()
         .mineBlock(Seq(Transaction("vecna", "tiamat", 1)), "vecna", Seq("vecna", "tiamat"))
-        .get
     assertThrows[UserAlreadyExists] {
-      chain.mineBlock(Seq(Transaction("vecna", "tiamat", 1)), "vecna", Seq("vecna")).get
+      chain.mineBlock(Seq(Transaction("vecna", "tiamat", 1)), "vecna", Seq("vecna"))
     }
   }
 
   test("add block onto blockchain") {
     val chain        = new Blockchain()
     val transactions = Seq(Transaction("vecna", "tiamat", 1))
-    val newChain     = chain.mineBlock(transactions, "vecna", Seq("vecna", "tiamat")).get
+    val newChain     = chain.mineBlock(transactions, "vecna", Seq("vecna", "tiamat"))
     assert(newChain.size === 2)
     assert(newChain.last.ledger("vecna") === 0)
     assert(newChain.last.ledger("tiamat") === 1)
@@ -49,7 +47,7 @@ class BlockchainSpec extends FunSuite {
   test("can't send more tokens than you have") {
     val transactions = Seq(Transaction("vecna", "tiamat", 5), Transaction("tiamat", "vecna", 5))
     assertThrows[IllegalTransactions] {
-      new Blockchain().mineBlock(transactions, "vecna", Seq("vecna", "tiamat")).get
+      new Blockchain().mineBlock(transactions, "vecna", Seq("vecna", "tiamat"))
     }
   }
 
@@ -63,7 +61,7 @@ class BlockchainSpec extends FunSuite {
     val chain        = new Blockchain()
     val transactions = Seq()
     assertThrows[IllegalTransactions] {
-      chain.mineBlock(transactions, "vecna", Seq("vecna")).get
+      chain.mineBlock(transactions, "vecna", Seq("vecna"))
     }
   }
 
@@ -79,7 +77,7 @@ class BlockchainSpec extends FunSuite {
     }
     val chain = new Blockchain(Seq(new RootBlock(testLedger)))
     val newChain = (chain /: randomTransactions) { (blockchain, transaction) =>
-      blockchain.mineBlock(Seq(transaction), random(randomUserNames)).get
+      blockchain.mineBlock(Seq(transaction), random(randomUserNames))
     }
 
     def testBlock(mb: MinedBlock): Unit = {
