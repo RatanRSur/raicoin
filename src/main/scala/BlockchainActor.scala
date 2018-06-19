@@ -1,7 +1,6 @@
 import akka.actor._
 
 case object Broadcast
-case class Received(index: Long, hashHex: String)
 
 class BlockchainActor(var blockchain: Blockchain) extends Actor {
 
@@ -13,6 +12,9 @@ class BlockchainActor(var blockchain: Blockchain) extends Actor {
         sender() ! unbroadcasted.head
         unbroadcasted = unbroadcasted.tail
       }
-    case block: Block => sender() ! Received(block.index, block.hashHex)
+    case block: Block => {
+      blockchain = blockchain :+ block
+      unbroadcasted = unbroadcasted :+ block
+    }
   }
 }
