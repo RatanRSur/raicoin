@@ -14,7 +14,7 @@ class BlockchainActor(var blockchain: Blockchain) extends Actor {
       }
     case block: Block => {
       blockchain = blockchain :+ block
-      unbroadcasted = unbroadcasted :+ block
+      unbroadcasted = (unbroadcasted :+ block).sorted(BlockOrdering)
     }
   }
 }
