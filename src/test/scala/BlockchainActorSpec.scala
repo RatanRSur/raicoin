@@ -11,7 +11,7 @@ class BlockchainActorSpec
     with ImplicitSender
     with FunSuiteLike {
 
-  implicit val timeout = Timeout(300.millis)
+  implicit val timeout = Timeout(10.millis)
   implicit val ec      = system.dispatcher
 
   def afterAll {
@@ -27,7 +27,7 @@ class BlockchainActorSpec
     blockchainActor ! Broadcast
     chain.foreach(block => expectMsg(block))
     blockchainActor ! Broadcast
-    expectNoMessage(300.millis)
+    expectNoMessage(1.millis)
   }
 
   test("broadcasted chain has the same hashes") {
