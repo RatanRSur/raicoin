@@ -10,6 +10,7 @@ class BlockchainActorSpec
     with ImplicitSender
     with FunSuiteLike {
 
+  val timeout     = 10.millis
   implicit val ec = system.dispatcher
 
   def afterAll {
@@ -25,7 +26,7 @@ class BlockchainActorSpec
     blockchainActor ! Broadcast
     chain.foreach(block => expectMsg(block))
     blockchainActor ! Broadcast
-    expectNoMessage()
+    expectNoMessage(timeout)
   }
 
   test("broadcasted blocks are same as local blocks") {
@@ -44,7 +45,22 @@ class BlockchainActorSpec
     val blockchainActor = system.actorOf(Props(new BlockchainActor(chain)))
     val newLocalChain   = chain.mineBlock(Seq(Transaction("tiamat", "vecna", 1)), "tiamat")
     blockchainActor ! newLocalChain.last
-    expectNoMessage()
+    expectNoMessage(timeout)
+    blockchainActor ! Broadcast
+    newLocalChain.map(block => expectMsg(block))
+  }
+
+  test("adds blocks in correct order") {
+    val chain =
+      new Blockchain()
+        .mineBlock(Seq(Transaction("vecna", "tiamat", 1)), "vecna", Seq("vecna", "tiamat"))
+    val blockchainActor = system.actorOf(Props(new BlockchainActor(chain)))
+    val newLocalChain = chain
+      .mineBlock(Seq(Transaction("tiamat", "vecna", 1)), "tiamat")
+      .mineBlock(Seq(Transaction("vecna", "tiamat", 1)), "tiamat")
+    blockchainActor ! newLocalChain.last
+    blockchainActor ! newLocalChain(newLocalChain.length - 2)
+    expectNoMessage(timeout)
     blockchainActor ! Broadcast
     newLocalChain.map(block => expectMsg(block))
   }

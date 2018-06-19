@@ -3,6 +3,10 @@ import scala.collection.SortedSet
 import java.security.MessageDigest
 import scala.util.{Try, Success, Failure}
 
+object BlockOrdering extends Ordering[Block] {
+  def compare(a: Block, b: Block) = a.index.compare(b.index)
+}
+
 abstract class Block extends SHAHashable {
   val index: Long
   val ledger: Ledger
