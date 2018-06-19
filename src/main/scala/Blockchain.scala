@@ -4,7 +4,7 @@ import Exceptions._
 
 class Blockchain(val blocks: Seq[Block] = Seq(new RootBlock())) extends Seq[Block] {
 
-  private def :+(block: Block) = new Blockchain(blocks :+ block)
+  def :+(block: Block): Blockchain = new Blockchain(blocks :+ block)
 
   // Members declared in IterableLike
   def iterator: Iterator[Block] = blocks.iterator

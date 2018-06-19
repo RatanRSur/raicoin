@@ -1,6 +1,5 @@
 import org.scalatest._
 import akka.actor._
-import akka.pattern.ask
 import akka.testkit.{ImplicitSender, TestActors, TestKit}
 import akka.util.Timeout
 
@@ -11,8 +10,7 @@ class BlockchainActorSpec
     with ImplicitSender
     with FunSuiteLike {
 
-  implicit val timeout = Timeout(10.millis)
-  implicit val ec      = system.dispatcher
+  implicit val ec = system.dispatcher
 
   def afterAll {
     TestKit.shutdownActorSystem(system)
@@ -27,32 +25,28 @@ class BlockchainActorSpec
     blockchainActor ! Broadcast
     chain.foreach(block => expectMsg(block))
     blockchainActor ! Broadcast
-    expectNoMessage(1.millis)
+    expectNoMessage()
   }
 
-  test("broadcasted chain has the same hashes") {
+  test("broadcasted blocks are same as local blocks") {
     val chain =
       new Blockchain()
         .mineBlock(Seq(Transaction("vecna", "tiamat", 1)), "vecna", Seq("vecna", "tiamat"))
     val blockchainActor = system.actorOf(Props(new BlockchainActor(chain)))
     blockchainActor ! Broadcast
-    chain.foreach(block => expectMsg(block))
-    (blockchainActor ? Blockchain)
-      .mapTo[Blockchain]
-      .foreach(broadcastedChain =>
-        chain.zip(broadcastedChain).foreach {
-          case (b1, b2) => assert(b1.hash === b2.hash)
-      })
+    chain.map(block => expectMsg(block))
   }
 
-  test("Blockchain actor confirms receipt of block") {
+  test("adds received block to blockchain") {
     val chain =
       new Blockchain()
         .mineBlock(Seq(Transaction("vecna", "tiamat", 1)), "vecna", Seq("vecna", "tiamat"))
     val blockchainActor = system.actorOf(Props(new BlockchainActor(chain)))
     val newLocalChain   = chain.mineBlock(Seq(Transaction("tiamat", "vecna", 1)), "tiamat")
     blockchainActor ! newLocalChain.last
-    expectMsg(Received(2, newLocalChain.last.hashHex))
+    expectNoMessage()
+    blockchainActor ! Broadcast
+    newLocalChain.map(block => expectMsg(block))
   }
 
 }
