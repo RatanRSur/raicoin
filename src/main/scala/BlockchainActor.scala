@@ -1,20 +1,26 @@
 import akka.actor._
 
 case object Broadcast
+case class Request(index: Int)
 
 class BlockchainActor(var blockchain: Blockchain) extends Actor {
 
-  var unbroadcasted = blockchain.blocks
+  var floatingBlocks = Seq[Block]()
 
   def receive = {
-    case Broadcast =>
-      while (unbroadcasted.nonEmpty) {
-        sender() ! unbroadcasted.head
-        unbroadcasted = unbroadcasted.tail
-      }
     case block: Block => {
-      blockchain = blockchain :+ block
-      unbroadcasted = (unbroadcasted :+ block).sorted(BlockOrdering)
+      if (block.index > blockchain.length) {
+        floatingBlocks = (floatingBlocks :+ block).sorted(BlockOrdering)
+      } else {
+        blockchain = blockchain :+ block
+        while (floatingBlocks.nonEmpty && floatingBlocks.head.index == blockchain.length) {
+          blockchain = blockchain :+ floatingBlocks.head
+          floatingBlocks = floatingBlocks.tail
+        }
+      }
+    }
+    case Request(index) => {
+      sender() ! blockchain(index)
     }
   }
 }
