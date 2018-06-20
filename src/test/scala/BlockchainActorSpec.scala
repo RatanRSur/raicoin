@@ -48,4 +48,14 @@ class BlockchainActorSpec
     })
   }
 
+  test("responds to request for one block") {
+    val chain =
+      new Blockchain()
+        .mineBlock(Seq(Transaction("vecna", "tiamat", 1)), "vecna", Seq("vecna", "tiamat"))
+    val blockchainActor = system.actorOf(Props(new BlockchainActor(chain)))
+
+    blockchainActor ! Request(1)
+    expectMsg(chain.last)
+  }
+
 }
