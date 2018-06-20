@@ -8,7 +8,7 @@ object BlockOrdering extends Ordering[Block] {
 }
 
 abstract class Block extends SHAHashable {
-  val index: Long
+  val index: Int
   val ledger: Ledger
   override lazy val toString: String = s"${getClass.getName}(index: $index, hash: $hashHex)"
 }
