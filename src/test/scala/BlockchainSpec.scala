@@ -14,16 +14,16 @@ class BlockchainSpec extends FunSuite {
 
   test("initial Blockchain no blocks and no users") {
     val chain = new Blockchain()
-    assert(chain.size === 1)
-    assert(chain.last.ledger.size === 0)
+    assert(chain.height === 1)
+    assert(chain.tip.ledger.size === 0)
   }
 
   test("add users") {
     val chain =
       new Blockchain()
         .mineBlock(Seq(Transaction("vecna", "tiamat", 1)), "vecna", Seq("vecna", "tiamat"))
-    assert(chain.size === 2)
-    assert(chain.last.ledger.size === 2)
+    assert(chain.height === 2)
+    assert(chain.tip.ledger.size === 2)
   }
 
   test("can't add user that already exists") {
@@ -39,9 +39,9 @@ class BlockchainSpec extends FunSuite {
     val chain        = new Blockchain()
     val transactions = Seq(Transaction("vecna", "tiamat", 1))
     val newChain     = chain.mineBlock(transactions, "vecna", Seq("vecna", "tiamat"))
-    assert(newChain.size === 2)
-    assert(newChain.last.ledger("vecna") === 0)
-    assert(newChain.last.ledger("tiamat") === 1)
+    assert(newChain.height === 2)
+    assert(newChain.tip.ledger("vecna") === 0)
+    assert(newChain.tip.ledger("tiamat") === 1)
   }
 
   test("can't send more tokens than you have") {

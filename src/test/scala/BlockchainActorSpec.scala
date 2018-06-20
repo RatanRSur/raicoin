@@ -23,7 +23,7 @@ class BlockchainActorSpec
         .mineBlock(Seq(Transaction("vecna", "tiamat", 1)), "vecna", Seq("vecna", "tiamat"))
     val blockchainActor = system.actorOf(Props(new BlockchainActor(chain)))
     val newLocalChain   = chain.mineBlock(Seq(Transaction("tiamat", "vecna", 1)), "tiamat")
-    blockchainActor ! newLocalChain.last
+    blockchainActor ! newLocalChain.tip
     expectNoMessage(timeout)
     newLocalChain.foreach(block => {
       blockchainActor ! Request(block.index)
@@ -31,7 +31,7 @@ class BlockchainActorSpec
     })
   }
 
-  test("adds blocks in correct order") {
+  test("throws away block that doesn't come in correct order") {
     val chain =
       new Blockchain()
         .mineBlock(Seq(Transaction("vecna", "tiamat", 1)), "vecna", Seq("vecna", "tiamat"))
@@ -39,13 +39,15 @@ class BlockchainActorSpec
     val newLocalChain = chain
       .mineBlock(Seq(Transaction("tiamat", "vecna", 1)), "tiamat")
       .mineBlock(Seq(Transaction("vecna", "tiamat", 1)), "tiamat")
-    blockchainActor ! newLocalChain.last
-    blockchainActor ! newLocalChain(newLocalChain.length - 2)
+    blockchainActor ! newLocalChain.tip
     expectNoMessage(timeout)
-    newLocalChain.foreach(block => {
-      blockchainActor ! Request(block.index)
-      expectMsg(block)
+    blockchainActor ! newLocalChain(newLocalChain.height - 2)
+    (0 to 2).map(i => {
+      blockchainActor ! Request(i)
+      expectMsg(newLocalChain(i))
     })
+    blockchainActor ! Request(3)
+    expectNoMessage(timeout)
   }
 
   test("responds to request for one block") {
@@ -55,7 +57,27 @@ class BlockchainActorSpec
     val blockchainActor = system.actorOf(Props(new BlockchainActor(chain)))
 
     blockchainActor ! Request(1)
-    expectMsg(chain.last)
+    expectMsg(chain.tip)
+  }
+
+  test("can keep track of longest chain") {
+    val chain =
+      new Blockchain()
+        .mineBlock(Seq(Transaction("vecna", "tiamat", 1)), "vecna", Seq("vecna", "tiamat"))
+    val blockchainActor = system.actorOf(Props(new BlockchainActor(chain)))
+    val chainA = chain
+      .mineBlock(Seq(Transaction("tiamat", "vecna", 1)), "tiamat")
+    val chainB = chain
+      .mineBlock(Seq(Transaction("tiamat", "vecna", 1)), "tiamat")
+      .mineBlock(Seq(Transaction("vecna", "tiamat", 1)), "tiamat")
+
+    blockchainActor ! chainA.tip
+    blockchainActor ! Request(2)
+    expectMsg(chainA.tip)
+    blockchainActor ! chainB(2)
+    blockchainActor ! chainB(3)
+    blockchainActor ! Request(2)
+    expectMsg(chainB(2))
   }
 
 }
