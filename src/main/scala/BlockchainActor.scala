@@ -5,22 +5,12 @@ case class Request(index: Int)
 
 class BlockchainActor(var blockchain: Blockchain) extends Actor {
 
-  var floatingBlocks = Seq[Block]()
-
   def receive = {
-    case block: Block => {
-      if (block.index > blockchain.length) {
-        floatingBlocks = (floatingBlocks :+ block).sorted(BlockOrdering)
-      } else {
-        blockchain = blockchain :+ block
-        while (floatingBlocks.nonEmpty && floatingBlocks.head.index == blockchain.length) {
-          blockchain = blockchain :+ floatingBlocks.head
-          floatingBlocks = floatingBlocks.tail
-        }
-      }
-    }
+    case block: MinedBlock =>
+      if (block.index <= blockchain.height)
+        blockchain = blockchain.append(block)
     case Request(index) => {
-      sender() ! blockchain(index)
+      if (index < blockchain.height) sender() ! blockchain(index)
     }
   }
 }

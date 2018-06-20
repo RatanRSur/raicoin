@@ -4,12 +4,13 @@ import java.security.MessageDigest
 import scala.util.{Try, Success, Failure}
 
 object BlockOrdering extends Ordering[Block] {
-  def compare(a: Block, b: Block) = a.index.compare(b.index)
+  def compare(a: Block, b: Block) = -a.index.compare(b.index)
 }
 
 abstract class Block extends SHAHashable {
   val index: Int
   val ledger: Ledger
+  val timestamp: Long                = java.util.Calendar.getInstance.getTimeInMillis
   override lazy val toString: String = s"${getClass.getName}(index: $index, hash: $hashHex)"
 }
 
@@ -21,8 +22,7 @@ case class RootBlock(val ledger: Ledger = new Ledger()) extends Block {
 case class MinedBlock(val previousBlock: Block,
                       val transactions: Seq[Transaction],
                       val miner: String,
-                      val newUsers: Seq[String],
-                      val timestamp: Long = java.util.Calendar.getInstance.getTimeInMillis)
+                      val newUsers: Seq[String])
     extends Block {
   val index = previousBlock.index + 1
 
