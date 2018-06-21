@@ -5,7 +5,7 @@ import scala.collection.immutable.ListMap
 import org.apache.commons.codec.binary.Hex
 
 trait SHAHashable {
-  private val sha = MessageDigest.getInstance("SHA-256")
+  protected val sha = MessageDigest.getInstance("SHA-256")
 
   val hashDependencies: Seq[Array[Byte]]
   lazy val hash: Array[Byte] = {

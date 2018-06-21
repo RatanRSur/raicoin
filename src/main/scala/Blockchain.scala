@@ -2,7 +2,8 @@ import scala.collection.SortedSet
 import scala.util.{Try, Success, Failure}
 import Exceptions._
 
-class Blockchain(ts: Seq[Block] = Seq(new RootBlock())) extends Iterable[Block] {
+class Blockchain(ts: Seq[Block] = Seq(new RootBlock()), val difficulty: Int = 1)
+    extends Iterable[Block] {
 
   def this(tip: Block) = this(Seq(tip))
   val tips = ts.sorted(BlockOrdering)
@@ -45,7 +46,7 @@ class Blockchain(ts: Seq[Block] = Seq(new RootBlock())) extends Iterable[Block] 
                 newUsers: Seq[String] = Seq.empty): Blockchain = {
     customRequire(transactions.nonEmpty,
                   new IllegalTransactions("No transactions to put in block."))
-    append(new MinedBlock(this.tip, transactions, miner, newUsers))
+    append(new MinedBlock(this.tip, transactions, miner, newUsers, difficulty))
   }
 
   override val toString: String =

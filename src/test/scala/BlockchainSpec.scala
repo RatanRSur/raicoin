@@ -53,6 +53,11 @@ class BlockchainSpec extends FunSuite with TestChains {
     }
   }
 
+  test("hash of mined blocks begin with 0's according to difficulty") {
+    assert(length4chain.tail.map(_.hash).forall(_.startsWith(Seq.fill(length2chain.difficulty)(0))),
+           length4chain.toString)
+  }
+
   test("blockchain hash chain is solid all the way back") {
     val randomUserNames = Seq.fill(10)(randomUserName).toSet
     val testLedger = (new Ledger() /: randomUserNames) { (ledger, user) =>
@@ -71,11 +76,10 @@ class BlockchainSpec extends FunSuite with TestChains {
     def testBlock(mb: MinedBlock): Unit = {
       val manualPrevBlockHash = {
         val sha          = MessageDigest.getInstance("SHA-256")
-        val timestamp    = new SHAHashable { val hashDependencies = Seq(mb.timestamp.hash) }
         val ledger       = new SHAHashable { val hashDependencies = Seq(mb.ledger.hash) }
         val transactions = new SHAHashable { val hashDependencies = Seq(mb.transactions.hash) }
         sha.update(mb.previousBlock.hash)
-        Seq[SHAHashable](timestamp, ledger, transactions).foreach(x => sha.update(x.hash))
+        Seq[SHAHashable](ledger, transactions).foreach(x => sha.update(x.hash))
         sha.digest
       }
       assert(mb.hash == manualPrevBlockHash)
