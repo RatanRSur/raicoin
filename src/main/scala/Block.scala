@@ -10,7 +10,6 @@ object BlockOrdering extends Ordering[Block] {
 abstract class Block extends SHAHashable {
   val index: Int
   val ledger: Ledger
-  val timestamp: Long                = java.util.Calendar.getInstance.getTimeInMillis
   override lazy val toString: String = s"${getClass.getName}(index: $index, hash: $hashHex)"
 }
 
@@ -22,7 +21,8 @@ case class RootBlock(val ledger: Ledger = new Ledger()) extends Block {
 case class MinedBlock(val previousBlock: Block,
                       val transactions: Seq[Transaction],
                       val miner: String,
-                      val newUsers: Seq[String])
+                      val newUsers: Seq[String],
+                      difficulty: Int)
     extends Block {
   val index = previousBlock.index + 1
 
@@ -33,7 +33,20 @@ case class MinedBlock(val previousBlock: Block,
       .applyTransactions(transactions)
       .get
 
-  val hashDependencies =
-    Seq[SHAHashable](previousBlock, transactions, ledger, timestamp).map(_.hash)
+  val hashDependencies = Seq[SHAHashable](previousBlock, transactions, ledger).map(_.hash)
+
+  override lazy val hash = {
+    var currentNonce = 0
+    def currentHash = {
+      sha.reset()
+      hashDependencies.foreach(sha.update)
+      sha.update(currentNonce.hash)
+      sha.digest
+    }
+    while (!currentHash.startsWith(Seq.fill(difficulty)(0))) {
+      currentNonce += 1
+    }
+    currentHash
+  }
 
 }
