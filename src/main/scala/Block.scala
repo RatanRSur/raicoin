@@ -1,6 +1,7 @@
 import scala.util.Random
 import scala.collection.SortedSet
 import java.security.MessageDigest
+import java.nio.ByteBuffer
 import scala.util.{Try, Success, Failure}
 
 object BlockOrdering extends Ordering[Block] {
@@ -40,7 +41,8 @@ case class MinedBlock(val previousBlock: Block,
     def currentHash = {
       sha.reset()
       hashDependencies.foreach(sha.update)
-      sha.update(currentNonce.hash)
+      val buf = ByteBuffer.allocate(4).putInt(currentNonce)
+      sha.update(buf.array)
       sha.digest
     }
     while (!currentHash.startsWith(Seq.fill(difficulty)(0))) {
