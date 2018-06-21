@@ -3,7 +3,7 @@ import scala.util.Random
 import java.security.MessageDigest
 import Exceptions._
 
-class BlockchainSpec extends FunSuite {
+class BlockchainSpec extends FunSuite with TestChains {
 
   def randomUserName = Random.nextString(5)
 
@@ -13,41 +13,31 @@ class BlockchainSpec extends FunSuite {
   }
 
   test("initial Blockchain no blocks and no users") {
-    val chain = new Blockchain()
-    assert(chain.height === 1)
-    assert(chain.tip.ledger.size === 0)
+    assert(rootOnly.height === 1)
+    assert(rootOnly.tip.ledger.size === 0)
   }
 
   test("add users") {
-    val chain =
-      new Blockchain()
-        .mineBlock(Seq(Transaction("vecna", "tiamat", 1)), "vecna", Seq("vecna", "tiamat"))
-    assert(chain.height === 2)
-    assert(chain.tip.ledger.size === 2)
+    assert(length2chain.height === 2)
+    assert(length2chain.tip.ledger.size === 2)
   }
 
   test("can't add user that already exists") {
-    val chain =
-      new Blockchain()
-        .mineBlock(Seq(Transaction("vecna", "tiamat", 1)), "vecna", Seq("vecna", "tiamat"))
     assertThrows[UserAlreadyExists] {
-      chain.mineBlock(Seq(Transaction("vecna", "tiamat", 1)), "vecna", Seq("vecna"))
+      length2chain.mineBlock(Seq(Transaction("vecna", "tiamat", 1)), "vecna", Seq("vecna"))
     }
   }
 
   test("add block onto blockchain") {
-    val chain        = new Blockchain()
-    val transactions = Seq(Transaction("vecna", "tiamat", 1))
-    val newChain     = chain.mineBlock(transactions, "vecna", Seq("vecna", "tiamat"))
-    assert(newChain.height === 2)
-    assert(newChain.tip.ledger("vecna") === 0)
-    assert(newChain.tip.ledger("tiamat") === 1)
+    assert(length2chain.height === 2)
+    assert(length2chain.tip.ledger("vecna") === 0)
+    assert(length2chain.tip.ledger("tiamat") === 1)
   }
 
   test("can't send more tokens than you have") {
     val transactions = Seq(Transaction("vecna", "tiamat", 5), Transaction("tiamat", "vecna", 5))
     assertThrows[IllegalTransactions] {
-      new Blockchain().mineBlock(transactions, "vecna", Seq("vecna", "tiamat"))
+      rootOnly.mineBlock(transactions, "vecna", Seq("vecna", "tiamat"))
     }
   }
 
@@ -58,10 +48,8 @@ class BlockchainSpec extends FunSuite {
   }
 
   test("every block must have at least 1 transaction") {
-    val chain        = new Blockchain()
-    val transactions = Seq()
     assertThrows[IllegalTransactions] {
-      chain.mineBlock(transactions, "vecna", Seq("vecna"))
+      rootOnly.mineBlock(Seq(), "vecna", Seq("vecna"))
     }
   }
 
