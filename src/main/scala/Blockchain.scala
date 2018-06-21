@@ -2,12 +2,12 @@ import scala.collection.SortedSet
 import scala.util.{Try, Success, Failure}
 import Exceptions._
 
-class Blockchain(ts: Seq[Block] = Seq(new RootBlock()), val difficulty: Int = 1)
+class Blockchain(tips: Seq[Block] = Seq(new RootBlock()), val difficulty: Int = 1)
     extends Iterable[Block] {
 
   def this(tip: Block) = this(Seq(tip))
-  val tips = ts.sorted(BlockOrdering)
-  val tip  = tips.head
+  val sortedTips = tips.sorted(BlockOrdering)
+  val tip        = tips.head
   def append(newBlock: MinedBlock): Blockchain = {
     val replaceIndex = tips.indexWhere(_ == newBlock.previousBlock)
     new Blockchain(if (replaceIndex == -1) {
@@ -35,7 +35,7 @@ class Blockchain(ts: Seq[Block] = Seq(new RootBlock()), val difficulty: Int = 1)
       }
     }.toSeq.reverseIterator
 
-  def height: Int = tip.index + 1
+  val height: Int = tip.index + 1
   def apply(idx: Int): Block = {
     require(idx < height)
     iterator.drop(idx).next()
