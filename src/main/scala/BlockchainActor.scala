@@ -1,3 +1,5 @@
+package ratan.blockchain
+
 import akka.actor._
 
 case object Broadcast

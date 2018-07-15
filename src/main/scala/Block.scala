@@ -1,3 +1,5 @@
+package ratan.blockchain
+
 import scala.util.Random
 import scala.collection.SortedSet
 import java.security.MessageDigest

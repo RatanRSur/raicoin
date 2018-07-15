@@ -1,3 +1,5 @@
+package ratan.blockchain
+
 import Exceptions._
 
 case class Transaction(val sender: String, val recipient: String, val amount: Int)

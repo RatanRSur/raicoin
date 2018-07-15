@@ -1,3 +1,5 @@
+package ratan.blockchain
+
 import org.scalatest._
 import akka.actor._
 import akka.testkit.{ImplicitSender, TestActors, TestKit}

@@ -1,3 +1,5 @@
+package ratan.blockchain
+
 import scala.collection.SortedSet
 import scala.util.{Try, Success, Failure}
 import Exceptions._
