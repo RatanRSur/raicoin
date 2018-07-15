@@ -1,3 +1,5 @@
+package ratan.blockchain
+
 trait TestChains {
   val rootOnly = new Blockchain()
   val length2chain =

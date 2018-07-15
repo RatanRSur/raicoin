@@ -1,3 +1,5 @@
+package ratan.blockchain
+
 import scala.collection.immutable.ListMap
 import scala.collection.SortedSet
 import scala.util.{Try, Success, Failure}

@@ -1,3 +1,5 @@
+package ratan.blockchain
+
 import java.security.MessageDigest
 import java.nio.ByteBuffer
 import scala.collection.SortedSet
