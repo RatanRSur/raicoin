@@ -1,10 +1,6 @@
 package ratan.blockchain
 
-import scala.util.Random
-import scala.collection.SortedSet
-import java.security.MessageDigest
 import java.nio.ByteBuffer
-import scala.util.{Try, Success, Failure}
 
 object BlockOrdering extends Ordering[Block] {
   def compare(a: Block, b: Block) = -a.index.compare(b.index)
