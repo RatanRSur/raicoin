@@ -4,18 +4,15 @@ import java.security.MessageDigest
 import java.nio.ByteBuffer
 import scala.collection.SortedSet
 import scala.collection.immutable.ListMap
-import org.apache.commons.codec.binary.Hex
 
 trait SHAHashable {
-  protected val sha = MessageDigest.getInstance("SHA-256")
+  @transient protected val sha = MessageDigest.getInstance("SHA-256")
 
   val hashDependencies: Seq[Array[Byte]]
   lazy val hash: Array[Byte] = {
     hashDependencies.foreach(sha.update)
     sha.digest
   }
-
-  lazy val hashHex: String = Hex.encodeHexString(hash)
 
   // TODO: martin odersky says to make the implicits as specific as possible
   // I think he means that I should merge these and use the type condition set in hashable seq

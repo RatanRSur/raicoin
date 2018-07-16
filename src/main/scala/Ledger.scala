@@ -7,14 +7,15 @@ import Exceptions._
 
 class Ledger(private val internalLedger: ListMap[String, Long] = ListMap.empty)
     extends Iterable[(String, Long)]
-    with SHAHashable {
+    with SHAHashable
+    with Serializable {
 
   //convenience
   def apply(x: String): Long              = internalLedger(x)
   def +(kv: (String, Long)): Ledger       = new Ledger(internalLedger + kv)
   def contains(userName: String): Boolean = internalLedger.contains(userName)
   //from Iterable
-  val iterator = internalLedger.iterator
+  def iterator = internalLedger.iterator
 
   def rewardMiner(miner: String): Ledger = increase(miner, 1)
   def addUsers(userNames: Seq[String]): Ledger = (this /: userNames) { (ledger, userName) =>

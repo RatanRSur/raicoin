@@ -8,10 +8,11 @@ lazy val root = (project in file(".")).settings(
     )),
   name := "blockchain",
   libraryDependencies ++= Seq(
-    "org.scalatest"     %% "scalatest"    % "3.0.5",
-    "com.typesafe.akka" %% "akka-actor"   % "2.5.12",
-    "com.typesafe.akka" %% "akka-testkit" % "2.5.12" % Test,
-    "commons-codec"     % "commons-codec" % "1.11"
+    "org.scalatest"      %% "scalatest"    % "3.0.5",
+    "com.typesafe.akka"  %% "akka-actor"   % "2.5.12",
+    "com.typesafe.akka"  %% "akka-testkit" % "2.5.12" % Test,
+    "commons-codec"      % "commons-codec" % "1.11",
+    "org.apache.commons" % "commons-lang3" % "3.7"
   ),
   scalacOptions += "-feature",
   parallelExecution in Test := false,
