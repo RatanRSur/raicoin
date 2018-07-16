@@ -1,52 +1,61 @@
 package ratan.blockchain
 
 import java.nio.ByteBuffer
+import org.apache.commons.codec.binary.Hex
 
-object BlockOrdering extends Ordering[Block] {
-  def compare(a: Block, b: Block) = -a.index.compare(b.index)
-}
-
-abstract class Block extends SHAHashable {
-  val index: Int
+abstract class Block extends SHAHashable with Serializable {
   val ledger: Ledger
-  override lazy val toString: String = s"${getClass.getName}(index: $index, hash: $hashHex)"
 }
 
 case class RootBlock(val ledger: Ledger = new Ledger()) extends Block {
-  val index            = 0
-  val hashDependencies = Seq(ledger.hash)
+  val hashDependencies               = Seq(ledger.hash)
+  override lazy val toString: String = s"${getClass.getName}(hash: ${Hex.encodeHexString(hash)})"
 }
 
-case class MinedBlock(val previousBlock: Block,
-                      val transactions: Seq[Transaction],
-                      val miner: String,
-                      val newUsers: Seq[String],
-                      difficulty: Int)
+object EmptyRootBlock extends RootBlock()
+
+case class MinedBlock(val parentHash: String,
+                      parentLedger: Ledger,
+                      transactions: Seq[Transaction],
+                      miner: String,
+                      newUsers: Seq[String],
+                      difficulty: Int,
+                      checkNonce: Option[Int] = None)
     extends Block {
-  val index = previousBlock.index + 1
 
-  val ledger =
-    previousBlock.ledger
-      .addUsers(newUsers)
-      .rewardMiner(miner)
-      .applyTransactions(transactions)
-      .get
+  val ledger = parentLedger
+    .addUsers(newUsers)
+    .rewardMiner(miner)
+    .applyTransactions(transactions)
+    .get
 
-  val hashDependencies = Seq[SHAHashable](previousBlock, transactions, ledger).map(_.hash)
+  val hashDependencies = Seq[SHAHashable](parentHash, transactions, ledger).map(_.hash)
 
-  override lazy val hash = {
-    var currentNonce = 0
-    def currentHash = {
-      sha.reset()
-      hashDependencies.foreach(sha.update)
-      val buf = ByteBuffer.allocate(4).putInt(currentNonce)
-      sha.update(buf.array)
-      sha.digest
-    }
-    while (!currentHash.startsWith(Seq.fill(difficulty)(0))) {
-      currentNonce += 1
-    }
-    currentHash
+  private def hashWithNonce(n: Int): Array[Byte] = {
+    sha.reset()
+    hashDependencies.foreach(sha.update)
+    val buf = ByteBuffer.allocate(4).putInt(n)
+    sha.update(buf.array)
+    sha.digest
   }
+
+  private def isCorrect(candidate: Array[Byte]): Boolean =
+    candidate.startsWith(Seq.fill(difficulty)(0))
+
+  private var nonce = 0 //this is only to be modified by the loop in hash (below)
+  override lazy val hash = {
+    checkNonce match {
+      case Some(n) => require(isCorrect(hashWithNonce(n)), "Invalid hash")
+      case None => {
+        while (!isCorrect(hashWithNonce(nonce))) {
+          nonce += 1
+        }
+      }
+    }
+    hashWithNonce(nonce)
+  }
+
+  override lazy val toString: String =
+    s"${getClass.getName}(hash: ${Hex.encodeHexString(hash)}, parentHash: $parentHash)"
 
 }

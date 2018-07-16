@@ -2,55 +2,69 @@ package ratan.blockchain
 
 import org.scalatest._
 import akka.actor._
-import akka.testkit.{ImplicitSender, TestActors, TestKit}
+import akka.testkit.{ImplicitSender, TestActors, TestKit, TestProbe}
 import akka.util.Timeout
+import akka.io.Tcp
+import akka.io.IO
 
 import scala.concurrent.duration._
+import scala.concurrent.Await
 
-class BlockchainActorSpec
-    extends TestKit(ActorSystem("Blockchain"))
-    with ImplicitSender
-    with FunSuiteLike
-    with TestChains {
+class BlockchainActorSpec extends FunSuiteLike with TestChains {
 
-  val timeout     = 10.millis
-  implicit val ec = system.dispatcher
+  val timeout = 10.millis
 
-  def afterAll {
-    TestKit.shutdownActorSystem(system)
-  }
-
-  test("adds received block to blockchain") {
-    val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain)))
+  ignore("adds received block to blockchain") {
+    implicit val system        = ActorSystem()
+    val blockchainActor        = system.actorOf(Props(new BlockchainActor(length2chain)))
+    val p                      = TestProbe("p")(system)
+    implicit val defaultSender = p.testActor
     blockchainActor ! length3chain.tip
-    expectNoMessage(timeout)
-    length3chain.foreach(block => {
-      blockchainActor ! Request(block.index)
-      expectMsg(block)
-    })
+    p.expectNoMessage(timeout)
+    length3chain.zipWithIndex.foreach {
+      case (block, i) => {
+        blockchainActor ! Request(i)
+        p.expectMsg(block)
+      }
+    }
+    system.terminate()
   }
 
-  test("throws away block that doesn't come in correct order") {
+  ignore("throws away block that doesn't come in correct order") {
+    implicit val system        = ActorSystem()
+    val p                      = TestProbe("p")(system)
+    implicit val defaultSender = p.testActor
+
     val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain)))
     blockchainActor ! length4chain.tip
-    expectNoMessage(timeout)
+    p.expectNoMessage(timeout)
     blockchainActor ! length4chain(length4chain.height - 2)
     (0 to 2).map(i => {
       blockchainActor ! Request(i)
-      expectMsg(length4chain(i))
+      p.expectMsg(length4chain(i))
     })
     blockchainActor ! Request(3)
-    expectNoMessage(timeout)
+    p.expectNoMessage(timeout)
+    system.terminate()
   }
 
-  test("responds to request for one block") {
+  ignore("responds to request for one block") {
+    implicit val system        = ActorSystem()
+    val p                      = TestProbe("p")(system)
+    implicit val defaultSender = p.testActor
+
     val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain)))
 
     blockchainActor ! Request(1)
-    expectMsg(length2chain.tip)
+    p.expectMsg(length2chain.tip)
+    system.terminate()
   }
 
-  test("can keep track of longest chain") {
+  ignore("can keep track of longest chain") {
+    implicit val system        = ActorSystem()
+    val p                      = TestProbe("p")(system)
+    implicit val defaultSender = p.testActor
+
     val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain)))
     val chainA = length2chain
       .mineBlock(Seq(Transaction("tiamat", "vecna", 1)), "tiamat")
@@ -60,11 +74,12 @@ class BlockchainActorSpec
 
     blockchainActor ! chainA.tip
     blockchainActor ! Request(2)
-    expectMsg(chainA.tip)
+    p.expectMsg(chainA.tip)
     blockchainActor ! chainB(2)
     blockchainActor ! chainB(3)
     blockchainActor ! Request(2)
-    expectMsg(chainB(2))
+    p.expectMsg(chainB(2))
+    system.terminate()
   }
 
 }

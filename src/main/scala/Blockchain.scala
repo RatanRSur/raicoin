@@ -3,20 +3,43 @@ package ratan.blockchain
 import scala.collection.SortedSet
 import scala.util.{Try, Success, Failure}
 import Exceptions._
+import org.apache.commons.codec.binary.Hex
 
-class Blockchain(tips: Seq[Block] = Seq(new RootBlock()), val difficulty: Int = 1)
+class BlockWithParent(val block: Block, val parent: Option[BlockWithParent]) {
+  val index: Int = parent.map(_.index + 1).getOrElse(0)
+}
+
+class Blockchain(blocksByHash: Map[String, BlockWithParent] = {
+  Map((Hex.encodeHexString(EmptyRootBlock.hash) -> new BlockWithParent(EmptyRootBlock, None)))
+}, tips: Seq[BlockWithParent] = Seq(new BlockWithParent(EmptyRootBlock, None)))
     extends Iterable[Block] {
 
-  def this(tip: Block) = this(Seq(tip))
-  val sortedTips = tips.sorted(BlockOrdering)
-  val tip        = tips.head
-  def append(newBlock: MinedBlock): Blockchain = {
-    val replaceIndex = tips.indexWhere(_ == newBlock.previousBlock)
-    new Blockchain(if (replaceIndex == -1) {
-      tips :+ newBlock
-    } else {
-      tips.patch(replaceIndex, Seq(newBlock), 1)
-    })
+  val tip             = tips.head
+  val difficulty      = 1
+  val height          = tips.map(_.index).max + 1
+  def apply(idx: Int) = iterator.drop(idx).next()
+  val ledger          = tip.block.ledger
+
+  def append(minedBlock: MinedBlock): Blockchain = {
+    val parentBlock = blocksByHash.get(minedBlock.parentHash)
+    require(parentBlock.isDefined)
+    val wrappedBlock        = new BlockWithParent(minedBlock, parentBlock)
+    val updatedBlocksByHash = blocksByHash + (Hex.encodeHexString(minedBlock.hash) -> wrappedBlock)
+    val updatedTips = {
+      val replaceIndex =
+        tips.indexWhere(x => Hex.encodeHexString(x.block.hash) == minedBlock.parentHash)
+      if (replaceIndex == -1) {
+        tips :+ wrappedBlock
+      } else {
+        tips.patch(replaceIndex, Seq(wrappedBlock), 1)
+      }
+    }
+
+    new Blockchain(updatedBlocksByHash, updatedTips)
+  }
+
+  def containsParentOf(mb: MinedBlock): Boolean = {
+    blocksByHash.contains(mb.parentHash)
   }
 
   def iterator =
@@ -25,30 +48,30 @@ class Blockchain(tips: Seq[Block] = Seq(new RootBlock()), val difficulty: Int = 
       var rootUnread = true
       def hasNext    = rootUnread
       def next() = {
-        val ret = current
-        current = current match {
-          case mb: MinedBlock => mb.previousBlock
-          case rb: RootBlock => {
+        val ret = current.block
+        current = current.parent match {
+          case Some(mb) => mb
+          case None => {
             rootUnread = false
-            rb
+            current
           }
         }
         ret
       }
     }.toSeq.reverseIterator
 
-  val height: Int = tip.index + 1
-  def apply(idx: Int): Block = {
-    require(idx < height)
-    iterator.drop(idx).next()
-  }
-
   def mineBlock(transactions: Seq[Transaction],
                 miner: String,
                 newUsers: Seq[String] = Seq.empty): Blockchain = {
     customRequire(transactions.nonEmpty,
                   new IllegalTransactions("No transactions to put in block."))
-    append(new MinedBlock(this.tip, transactions, miner, newUsers, difficulty))
+    append(
+      new MinedBlock(Hex.encodeHexString(tip.block.hash),
+                     ledger,
+                     transactions,
+                     miner,
+                     newUsers,
+                     difficulty))
   }
 
   override val toString: String =
