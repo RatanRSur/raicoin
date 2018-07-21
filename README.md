@@ -4,3 +4,5 @@
 * **Git History Integrity** – All the commits pass tests. This means that I can confidently run commands that operate on many commits. Applications include performace testing every *n* commits to find regressions that creeped in and using git bisect to quickly hunt down a bug.
 * **Functional Core, Imperative Shell** – Keep the parts on the "inside" of the program as pure and immutable as possible and only use impure, side-effecting procedures at the "boundaries".
 
+* **Live Coding** – At least part of this project was streamed on [twitch](https://www.twitch.tv/rainocodes) with archives uploaded to [youtube](https://www.youtube.com/channel/UCx02LJT0RTblmsGnDoNGxKw).
+
