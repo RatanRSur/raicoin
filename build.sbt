@@ -14,6 +14,7 @@ lazy val root = (project in file(".")).settings(
     "commons-codec"     % "commons-codec" % "1.11"
   ),
   scalacOptions += "-feature",
+  parallelExecution in Test := false,
   fork := true,
   testOptions in Test += Tests.Argument("-oD")
 )
