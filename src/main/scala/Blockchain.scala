@@ -1,4 +1,4 @@
-package ratan.blockchain
+package raicoin
 
 import scala.collection.SortedSet
 import scala.util.{Try, Success, Failure}

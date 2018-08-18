@@ -1,4 +1,4 @@
-package ratan.blockchain
+package raicoin
 
 import scala.collection.immutable.ListMap
 import scala.collection.SortedSet
