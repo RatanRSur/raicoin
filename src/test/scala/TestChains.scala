@@ -1,4 +1,4 @@
-package ratan.blockchain
+package raicoin
 
 trait TestChains {
   val rootOnly = new Blockchain()
