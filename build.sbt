@@ -6,7 +6,7 @@ lazy val root = (project in file(".")).settings(
       scalaVersion := "2.12.6",
       version := "0.1.0-SNAPSHOT"
     )),
-  name := "blockchain",
+  name := "raicoin",
   libraryDependencies ++= Seq(
     "org.scalatest"      %% "scalatest"    % "3.0.5",
     "com.typesafe.akka"  %% "akka-actor"   % "2.5.12",

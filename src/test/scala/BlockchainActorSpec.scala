@@ -1,4 +1,4 @@
-package ratan.blockchain
+package raicoin
 
 import org.scalatest._
 import akka.actor._

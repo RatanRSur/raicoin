@@ -1,4 +1,4 @@
-package ratan.blockchain
+package raicoin
 
 import java.nio.ByteBuffer
 import org.apache.commons.codec.binary.Hex

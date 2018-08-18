@@ -1,4 +1,4 @@
-package ratan.blockchain
+package raicoin
 
 import java.security.MessageDigest
 import java.nio.ByteBuffer

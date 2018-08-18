@@ -1,4 +1,4 @@
-package ratan.blockchain
+package raicoin
 
 import akka.actor._
 
