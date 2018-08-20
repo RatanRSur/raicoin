@@ -20,7 +20,7 @@ class Blockchain(blocksByHash: Map[String, BlockWithParent] = {
   def apply(idx: Int) = iterator.drop(idx).next()
   val ledger          = tip.block.ledger
 
-  def appendIfParentExists(minedBlock: MinedBlock): Blockchain = {
+  def append(minedBlock: MinedBlock): Blockchain = {
     val parentBlock = blocksByHash.get(minedBlock.parentHash)
     if (parentBlock.isDefined) {
       val wrappedBlock        = new BlockWithParent(minedBlock, parentBlock)
@@ -68,7 +68,7 @@ class Blockchain(blocksByHash: Map[String, BlockWithParent] = {
                 newUsers: Seq[String] = Seq.empty): Blockchain = {
     customRequire(transactions.nonEmpty,
                   new IllegalTransactions("No transactions to put in block."))
-    appendIfParentExists(
+    append(
       new MinedBlock(Hex.encodeHexString(tip.block.hash),
                      ledger,
                      transactions,

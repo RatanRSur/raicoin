@@ -42,7 +42,7 @@ class BlockchainActor(var blockchain: Blockchain,
   def receive = {
     case block: MinedBlock => {
       println(blockchain)
-      blockchain = blockchain.appendIfParentExists(block)
+      blockchain = blockchain.append(block)
       println(blockchain)
     }
     case RequestBlocksSince(index) => {
