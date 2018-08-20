@@ -61,19 +61,19 @@ class BlockchainSpec extends FunSuite with TestChains {
   }
 
   //ignore("blockchain hash chain is solid all the way back") {
-    //val randomUserNames = Seq.fill(10)(randomUserName).toSet
-    //val testLedger = (new Ledger() /: randomUserNames) { (ledger, user) =>
-      //ledger + (user -> 50000000000L)
-    //}
-    //val randomTransactions = (0 until 10).map { _ =>
-      //val sender    = random(randomUserNames)
-      //val recipient = random(randomUserNames - sender)
-      //Transaction(sender, recipient, 1)
-    //}
-    //val chain = new Blockchain(Seq(new RootBlock(testLedger)))
-    //val newChain = (chain /: randomTransactions) { (blockchain, transaction) =>
-      //blockchain.mineBlock(Seq(transaction), random(randomUserNames))
-    //}
+  //val randomUserNames = Seq.fill(10)(randomUserName).toSet
+  //val testLedger = (new Ledger() /: randomUserNames) { (ledger, user) =>
+  //ledger + (user -> 50000000000L)
+  //}
+  //val randomTransactions = (0 until 10).map { _ =>
+  //val sender    = random(randomUserNames)
+  //val recipient = random(randomUserNames - sender)
+  //Transaction(sender, recipient, 1)
+  //}
+  //val chain = new Blockchain(Seq(new RootBlock(testLedger)))
+  //val newChain = (chain /: randomTransactions) { (blockchain, transaction) =>
+  //blockchain.mineBlock(Seq(transaction), random(randomUserNames))
+  //}
 
   //def testBlock(mb: MinedBlock): Unit = {
   //val manualPrevBlockHash = {
