@@ -10,45 +10,47 @@ import akka.io.IO
 import scala.concurrent.duration._
 import scala.concurrent.Await
 
+import TestUtils._
+
 class BlockchainActorSpec extends FunSuiteLike with TestChains {
 
   val timeout = 10.millis
 
-  ignore("adds received block to blockchain") {
+  test("adds received block to blockchain") {
     implicit val system        = ActorSystem()
     val blockchainActor        = system.actorOf(Props(new BlockchainActor(length2chain)))
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
-    blockchainActor ! length3chain.tip
+    blockchainActor ! length3chain.tip.block
     p.expectNoMessage(timeout)
     length3chain.zipWithIndex.foreach {
       case (block, i) => {
         blockchainActor ! Request(i)
-        p.expectMsg(block)
+        p.expectMsg(tcpWritten(block))
       }
     }
     system.terminate()
   }
 
-  ignore("throws away block that doesn't come in correct order") {
+  test("throws away block that doesn't come in correct order") {
     implicit val system        = ActorSystem()
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
 
     val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain)))
-    blockchainActor ! length4chain.tip
+    blockchainActor ! length4chain.tip.block
     p.expectNoMessage(timeout)
     blockchainActor ! length4chain(length4chain.height - 2)
     (0 to 2).map(i => {
       blockchainActor ! Request(i)
-      p.expectMsg(length4chain(i))
+      p.expectMsg(tcpWritten(length4chain(i)))
     })
     blockchainActor ! Request(3)
     p.expectNoMessage(timeout)
     system.terminate()
   }
 
-  ignore("responds to request for one block") {
+  test("responds to request for one block") {
     implicit val system        = ActorSystem()
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
@@ -56,11 +58,11 @@ class BlockchainActorSpec extends FunSuiteLike with TestChains {
     val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain)))
 
     blockchainActor ! Request(1)
-    p.expectMsg(length2chain.tip)
+    p.expectMsg(tcpWritten(length2chain.tip.block))
     system.terminate()
   }
 
-  ignore("can keep track of longest chain") {
+  test("can keep track of longest chain") {
     implicit val system        = ActorSystem()
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
@@ -72,13 +74,13 @@ class BlockchainActorSpec extends FunSuiteLike with TestChains {
       .mineBlock(Seq(Transaction("tiamat", "vecna", 1)), "tiamat")
       .mineBlock(Seq(Transaction("vecna", "tiamat", 1)), "tiamat")
 
-    blockchainActor ! chainA.tip
+    blockchainActor ! chainA.tip.block
     blockchainActor ! Request(2)
-    p.expectMsg(chainA.tip)
+    p.expectMsg(tcpWritten(chainA.tip.block))
     blockchainActor ! chainB(2)
     blockchainActor ! chainB(3)
     blockchainActor ! Request(2)
-    p.expectMsg(chainB(2))
+    p.expectMsg(tcpWritten(chainB(2)))
     system.terminate()
   }
 
