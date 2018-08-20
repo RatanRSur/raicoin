@@ -20,22 +20,25 @@ class Blockchain(blocksByHash: Map[String, BlockWithParent] = {
   def apply(idx: Int) = iterator.drop(idx).next()
   val ledger          = tip.block.ledger
 
-  def append(minedBlock: MinedBlock): Blockchain = {
+  def appendIfParentExists(minedBlock: MinedBlock): Blockchain = {
     val parentBlock = blocksByHash.get(minedBlock.parentHash)
-    require(parentBlock.isDefined)
-    val wrappedBlock        = new BlockWithParent(minedBlock, parentBlock)
-    val updatedBlocksByHash = blocksByHash + (Hex.encodeHexString(minedBlock.hash) -> wrappedBlock)
-    val updatedTips = {
-      val replaceIndex =
-        tips.indexWhere(x => Hex.encodeHexString(x.block.hash) == minedBlock.parentHash)
-      if (replaceIndex == -1) {
-        tips :+ wrappedBlock
-      } else {
-        tips.patch(replaceIndex, Seq(wrappedBlock), 1)
+    if (parentBlock.isDefined) {
+      val wrappedBlock        = new BlockWithParent(minedBlock, parentBlock)
+      val updatedBlocksByHash = blocksByHash + (Hex.encodeHexString(minedBlock.hash) -> wrappedBlock)
+      val updatedTips = {
+        val replaceIndex =
+          tips.indexWhere(x => Hex.encodeHexString(x.block.hash) == minedBlock.parentHash)
+        if (replaceIndex == -1) {
+          tips :+ wrappedBlock
+        } else {
+          tips.patch(replaceIndex, Seq(wrappedBlock), 1)
+        }
       }
-    }
 
-    new Blockchain(updatedBlocksByHash, updatedTips)
+      new Blockchain(updatedBlocksByHash, updatedTips)
+    } else {
+      this
+    }
   }
 
   def containsParentOf(mb: MinedBlock): Boolean = {
@@ -65,7 +68,7 @@ class Blockchain(blocksByHash: Map[String, BlockWithParent] = {
                 newUsers: Seq[String] = Seq.empty): Blockchain = {
     customRequire(transactions.nonEmpty,
                   new IllegalTransactions("No transactions to put in block."))
-    append(
+    appendIfParentExists(
       new MinedBlock(Hex.encodeHexString(tip.block.hash),
                      ledger,
                      transactions,
