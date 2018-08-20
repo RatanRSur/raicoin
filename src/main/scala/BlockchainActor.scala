@@ -13,6 +13,7 @@ import org.apache.commons.codec.binary.Hex
 
 case object Broadcast
 case class Request(index: Int)
+case class RequestBlocksSince(index: Int)
 
 object BlockchainActor {
   val BootstrapNodeAddress = new InetSocketAddress("localhost", 6364)
@@ -40,9 +41,17 @@ class BlockchainActor(var blockchain: Blockchain,
 
   def receive = {
     case block: MinedBlock => {
+      println(blockchain)
       blockchain = blockchain.appendIfParentExists(block)
+      println(blockchain)
+    }
+    case RequestBlocksSince(index) => {
+      (index until blockchain.height).map(i => blockchain(i)).foreach { block =>
+        sender() ! Tcp.Write(serialize(block))
+      }
     }
     case r @ Request(index) => {
+      println(s"got request for $index")
       if (index < blockchain.height) {
         sender() ! Tcp.Write(serialize(blockchain(index)))
       }
@@ -52,7 +61,9 @@ class BlockchainActor(var blockchain: Blockchain,
       val connection = sender()
       peer = Some(connection)
       connection ! Tcp.Register(context.self)
-      connection ! Tcp.Write(serialize(Request(blockchain.height)))
+      system.scheduler.schedule(0.millis, 100.millis) {
+        connection ! Tcp.Write(serialize(RequestBlocksSince(blockchain.height)))
+      }
     }
     case Tcp.Received(data) => {
       self.!(deserialize(data))(sender())
