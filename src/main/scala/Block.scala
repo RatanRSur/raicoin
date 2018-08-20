@@ -8,8 +8,9 @@ abstract class Block extends SHAHashable with Serializable {
 }
 
 case class RootBlock(val ledger: Ledger = new Ledger()) extends Block {
-  val hashDependencies               = Seq(ledger.hash)
-  override lazy val toString: String = s"${getClass.getName}(hash: ${Hex.encodeHexString(hash)})"
+  val hashDependencies = Seq(ledger.hash)
+  override lazy val toString: String =
+    s"${getClass.getName}(hash: ${Hex.encodeHexString(hash).take(6)}...)"
 }
 
 object EmptyRootBlock extends RootBlock()
@@ -56,6 +57,6 @@ case class MinedBlock(val parentHash: String,
   }
 
   override lazy val toString: String =
-    s"${getClass.getName}(hash: ${Hex.encodeHexString(hash)}, parentHash: $parentHash)"
+    s"${getClass.getName}(hash: ${Hex.encodeHexString(hash).take(6)}..., parentHash: ${parentHash.take(6)}...)"
 
 }
