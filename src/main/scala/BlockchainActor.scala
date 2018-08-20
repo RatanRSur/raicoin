@@ -40,7 +40,7 @@ class BlockchainActor(var blockchain: Blockchain,
 
   def receive = {
     case block: MinedBlock => {
-      blockchain = blockchain.append(block)
+      blockchain = blockchain.appendIfParentExists(block)
     }
     case r @ Request(index) => {
       if (index < blockchain.height) {
