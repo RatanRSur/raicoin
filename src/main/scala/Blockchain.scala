@@ -42,6 +42,19 @@ class Blockchain(blocksByHash: Map[String, BlockWithParent] = {
     blocksByHash.contains(mb.parentHash)
   }
 
+  def resolveOrphans(blocks: Seq[MinedBlock]): (Blockchain, Seq[MinedBlock]) = {
+    val notOrphans = blocks.filter(this.containsParentOf)
+    if (notOrphans.isEmpty) {
+      (this, blocks)
+    } else {
+      val orphans = blocks.filterNot(this.containsParentOf)
+      val updatedChain = (this /: notOrphans) {
+        case (chain, block) => chain.append(block)
+      }
+      updatedChain.resolveOrphans(orphans)
+    }
+  }
+
   def iterator =
     new Iterator[Block] {
       var current    = tip

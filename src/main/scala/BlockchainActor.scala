@@ -28,6 +28,7 @@ class BlockchainActor(var blockchain: Blockchain,
   import BlockchainActor._
 
   var peer: Option[ActorRef] = None
+  var orphans                = Seq[MinedBlock]()
 
   locally {
     val tcpManager = IO(Tcp)
@@ -41,17 +42,22 @@ class BlockchainActor(var blockchain: Blockchain,
 
   def receive = {
     case block: MinedBlock => {
-      println(blockchain)
-      blockchain = blockchain.append(block)
-      println(blockchain)
+      println(s"receiving $block from $sender")
+      // new* assignments to get around scala limitations of multiple assignment
+      val (newBlockchain, newOrphans) =
+        blockchain.resolveOrphans(orphans :+ block)
+      blockchain = newBlockchain
+      orphans = newOrphans
     }
     case RequestBlocksSince(index) => {
       (index until blockchain.height).map(i => blockchain(i)).foreach { block =>
-        sender() ! Tcp.Write(serialize(block))
+        {
+          println(s"sending $block to $sender")
+          sender() ! Tcp.Write(serialize(block))
+        }
       }
     }
     case r @ Request(index) => {
-      println(s"got request for $index")
       if (index < blockchain.height) {
         sender() ! Tcp.Write(serialize(blockchain(index)))
       }
@@ -61,7 +67,9 @@ class BlockchainActor(var blockchain: Blockchain,
       val connection = sender()
       peer = Some(connection)
       connection ! Tcp.Register(context.self)
-      connection ! Tcp.Write(serialize(Request(blockchain.height)))
+      system.scheduler.schedule(0.millis, 100.millis) {
+        connection ! Tcp.Write(serialize(RequestBlocksSince(blockchain.height)))
+      }
     }
     case Tcp.Received(data) => {
       self.!(deserialize(data))(sender())

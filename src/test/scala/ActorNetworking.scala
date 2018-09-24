@@ -24,7 +24,7 @@ class ActorNetworking extends FunSuiteLike with TestChains {
     val p                      = TestProbe("p")(systemB)
     implicit val defaultSender = p.testActor
 
-    Thread.sleep(1000)
+    Thread.sleep(3000)
     actorB ! Request(3)
     p.expectMsg(1.seconds, Tcp.Write(serialize(length4chain(3))))
     systemB.terminate()
