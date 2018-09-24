@@ -32,24 +32,6 @@ class BlockchainActorSpec extends FunSuiteLike with TestChains {
     system.terminate()
   }
 
-  test("throws away block that doesn't come in correct order") {
-    implicit val system        = ActorSystem()
-    val p                      = TestProbe("p")(system)
-    implicit val defaultSender = p.testActor
-
-    val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain)))
-    blockchainActor ! length4chain.tip.block
-    p.expectNoMessage(timeout)
-    blockchainActor ! length4chain(length4chain.height - 2)
-    (0 to 2).map(i => {
-      blockchainActor ! Request(i)
-      p.expectMsg(tcpWritten(length4chain(i)))
-    })
-    blockchainActor ! Request(3)
-    p.expectNoMessage(timeout)
-    system.terminate()
-  }
-
   test("responds to request for one block") {
     implicit val system        = ActorSystem()
     val p                      = TestProbe("p")(system)
