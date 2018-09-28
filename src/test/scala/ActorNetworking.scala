@@ -3,7 +3,7 @@ package raicoin
 import akka.actor._
 import akka.testkit.TestProbe
 import org.scalatest._
-import java.net.InetAddress
+import java.net.InetSocketAddress
 import scala.concurrent.duration._
 import BlockchainActor._
 import Serializer._
@@ -29,6 +29,33 @@ class ActorNetworking extends FunSuiteLike with TestChains {
     p.expectMsg(1.seconds, Tcp.Write(serialize(length4chain(3))))
     systemB.terminate()
     systemA.terminate()
+  }
+
+  test("B and C discover each other through A") {
+
+    val systemA = ActorSystem("A")
+    val actorA  = systemA.actorOf(Props(new BlockchainActor(length4chain, None)), "A")
+
+    val systemB = ActorSystem("B")
+    val actorB  = systemB.actorOf(Props(new BlockchainActor(length4chain)), "B")
+
+    Thread.sleep(1000)
+
+    val systemC = ActorSystem("C")
+    val actorC  = systemC.actorOf(Props(new BlockchainActor(length4chain)), "C")
+
+    val p                      = TestProbe("p")(systemC)
+    implicit val defaultSender = p.testActor
+
+    Thread.sleep(300)
+    actorC ! GetPeers
+    p.receiveN(2)
+    //actorB ! GetPeers
+    //p.receiveN(2)
+    systemC.terminate()
+    systemB.terminate()
+    systemA.terminate()
+    //fail
   }
 
 }
