@@ -67,8 +67,12 @@ class ActorNetworking extends FunSuiteLike with TestChains {
     val systemB = ActorSystem("B")
     val actorB  = systemB.actorOf(Props(new BlockchainActor(rootOnly)), "B")
 
+    Thread.sleep(500)
+
     val systemC = ActorSystem("C")
     val actorC  = systemC.actorOf(Props(new BlockchainActor(rootOnly)), "C")
+
+    Thread.sleep(500)
 
     val p                      = TestProbe("p")(systemC)
     implicit val defaultSender = p.testActor
