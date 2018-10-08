@@ -101,7 +101,7 @@ class BlockchainActor(var blockchain: Blockchain,
       }
     }
     case Tcp.Received(data) => {
-      println(s"${system.name}: ${deserialize(data)}")
+      //println(s"${system.name}: ${deserialize(data)}")
       self.!(deserialize(data))(sender())
     }
     case GetPeers => {
