@@ -17,7 +17,7 @@ case class Request(index: Int)
 case class RequestBlocksSince(index: Int)
 case object GetPeers
 case class PeerInfo(id: String, hostname: String, port: Int) {
-  def getInetSocketAddress = new InetSocketAddress(hostname, port)
+  def inetSocketAddress = new InetSocketAddress(hostname, port)
 }
 case object PeerInfo {
   def fromInetSocketAddress(id: String, insa: InetSocketAddress): PeerInfo = {
@@ -53,7 +53,7 @@ class BlockchainActor(var blockchain: Blockchain,
       knownPeers += sp
       tcpManager ! Tcp.Bind(self, new InetSocketAddress("localhost", 0))
     }
-    case None => tcpManager ! Tcp.Bind(self, BootstrapPeerInfo.getInetSocketAddress)
+    case None => tcpManager ! Tcp.Bind(self, BootstrapPeerInfo.inetSocketAddress)
   }
 
   def receive = {
@@ -80,7 +80,7 @@ class BlockchainActor(var blockchain: Blockchain,
       myPeerInfo = Some(PeerInfo.fromInetSocketAddress(id, address))
       knownPeers.foreach { kp: PeerInfo =>
         {
-          tcpManager ! Tcp.Connect(kp.getInetSocketAddress)
+          tcpManager ! Tcp.Connect(kp.inetSocketAddress)
         }
       }
     }
@@ -121,7 +121,7 @@ class BlockchainActor(var blockchain: Blockchain,
           currentConnection ! Tcp.Write(serialize(GetPeers))
         } else if (!knownPeers.contains(pi)) {
           knownPeers += pi
-          tcpManager ! Tcp.Connect(pi.getInetSocketAddress)
+          tcpManager ! Tcp.Connect(pi.inetSocketAddress)
         }
       }
     }
