@@ -65,10 +65,8 @@ class BlockchainActor(var blockchain: Blockchain,
       orphans = newOrphans
     }
     case RequestBlocksSince(index) => {
-      (index until blockchain.height).map(i => blockchain(i)).foreach { block =>
-        {
-          sender() ! Tcp.Write(serialize(block))
-        }
+      (index until blockchain.height).map(i => blockchain(i)).foreach {
+        block => sender() ! Tcp.Write(serialize(block))
       }
     }
     case r @ Request(index) => {
