@@ -8,6 +8,7 @@ import scala.concurrent.duration._
 import BlockchainActor._
 import Serializer._
 import akka.io.Tcp
+import TestUtils._
 
 class ActorNetworking extends FunSuiteLike with TestChains with BeforeAndAfterEach {
 
@@ -30,7 +31,7 @@ class ActorNetworking extends FunSuiteLike with TestChains with BeforeAndAfterEa
 
     Thread.sleep(1000)
     actorB ! Request(3)
-    p.expectMsg(1.seconds, Tcp.Write(serialize(length4chain(3))))
+    p.expectMsg(1.seconds, tcpWritten(length4chain(3)))
     systemB.terminate()
     systemA.terminate()
   }
@@ -83,7 +84,7 @@ class ActorNetworking extends FunSuiteLike with TestChains with BeforeAndAfterEa
 
     Thread.sleep(1000)
     actorD ! Request(3)
-    val snarf = p.expectMsg(1.seconds, Tcp.Write(serialize(length4chain(3))))
+    val snarf = p.expectMsg(1.seconds, tcpWritten(length4chain(3)))
 
     systemD.terminate()
     systemC.terminate()
