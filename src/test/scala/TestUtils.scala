@@ -5,7 +5,7 @@ import Serializer._
 
 object TestUtils {
   def tcpWritten(obj: Serializable) = {
-    Tcp.Write(serialize(obj))
+    Tcp.Write(toByteString(obj))
   }
 
   def retriesOnTimeout[T](n: Int)(block: =>T): T = {

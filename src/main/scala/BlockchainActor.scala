@@ -67,12 +67,12 @@ class BlockchainActor(var blockchain: Blockchain,
     }
     case RequestBlocksSince(index) => {
       (index until blockchain.height).map(i => blockchain(i)).foreach {
-        block => sender() ! Tcp.Write(serialize(block))
+        block => sender() ! Tcp.Write(toByteString(block))
       }
     }
     case r @ Request(index) => {
       if (index < blockchain.height) {
-        sender() ! Tcp.Write(serialize(blockchain(index)))
+        sender() ! Tcp.Write(toByteString(blockchain(index)))
       }
     }
     case Tcp.Bound(address) => {
@@ -89,25 +89,25 @@ class BlockchainActor(var blockchain: Blockchain,
       peerRef ! Tcp.Register(context.self)
 
       connectedPeers += (peerRef -> None)
-      peerRef ! Tcp.Write(serialize(GetPeerInfo))
+      peerRef ! Tcp.Write(toByteString(GetPeerInfo))
 
       system.scheduler.schedule(0.millis, 500.millis) {
-        peerRef ! Tcp.Write(serialize(RequestBlocksSince(blockchain.height)))
+        peerRef ! Tcp.Write(toByteString(RequestBlocksSince(blockchain.height)))
       }
     }
     case GetPeerInfo => {
       myPeerInfo.foreach { pi =>
-        sender() ! Tcp.Write(serialize(pi))
+        sender() ! Tcp.Write(toByteString(pi))
       }
     }
     case Tcp.Received(data) => {
-      //println(s"${system.name}: ${deserialize(data)}")
-      self.!(deserialize(data))(sender())
+      println(s"${system.name}: ${fromByteString(data)}")
+      self.!(fromByteString(data))(sender())
     }
     case GetPeers => {
       knownPeers.foreach { peerInfo =>
         {
-          sender() ! Tcp.Write(serialize(peerInfo))
+          sender() ! Tcp.Write(toByteString(peerInfo))
         }
       }
     }
@@ -117,7 +117,7 @@ class BlockchainActor(var blockchain: Blockchain,
         if (connectedPeers(currentConnection).isEmpty) {
           knownPeers += pi
           connectedPeers += (currentConnection -> Some(pi))
-          currentConnection ! Tcp.Write(serialize(GetPeers))
+          currentConnection ! Tcp.Write(toByteString(GetPeers))
         } else if (!knownPeers.contains(pi)) {
           knownPeers += pi
           tcpManager ! Tcp.Connect(pi.inetSocketAddress)
