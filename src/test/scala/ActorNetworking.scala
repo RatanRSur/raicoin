@@ -77,7 +77,7 @@ class ActorNetworking extends FunSuiteLike with TestChains with BeforeAndAfterEa
     implicit val defaultSender = p.testActor
 
     actorC ! GetPeerInfo
-    val cInfo = deserialize(p.receiveN(1).head.asInstanceOf[Tcp.Write].data).asInstanceOf[PeerInfo]
+    val cInfo = fromByteString(p.receiveN(1).head.asInstanceOf[Tcp.Write].data).asInstanceOf[PeerInfo]
 
     val systemD = ActorSystem("D")
     val actorD  = systemD.actorOf(Props(new BlockchainActor(rootOnly, Some(cInfo))), "D")
