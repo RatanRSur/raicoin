@@ -9,7 +9,11 @@ import BlockchainActor._
 import Serializer._
 import akka.io.Tcp
 
-class ActorNetworking extends FunSuiteLike with TestChains {
+class ActorNetworking extends FunSuiteLike with TestChains with BeforeAndAfterEach {
+
+  override def afterEach() = {
+    Thread.sleep(300)
+  }
 
   test("remote actor automatically finds local actor and updates itself") {
 
