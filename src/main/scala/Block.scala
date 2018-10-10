@@ -2,6 +2,7 @@ package raicoin
 
 import java.nio.ByteBuffer
 import org.apache.commons.codec.binary.Hex
+import scorex.crypto.signatures._
 
 abstract class Block extends SHAHashable with Serializable {
   val ledger: Ledger
@@ -18,14 +19,14 @@ object EmptyRootBlock extends RootBlock()
 case class MinedBlock(val parentHash: String,
                       parentLedger: Ledger,
                       transactions: Seq[Transaction],
-                      miner: String,
-                      newUsers: Seq[String],
+                      miner: PublicKey,
+                      newPublicKeys: Seq[PublicKey],
                       difficulty: Int,
                       checkNonce: Option[Int] = None)
     extends Block {
 
   val ledger = parentLedger
-    .addUsers(newUsers)
+    .addPublicKeys(newPublicKeys)
     .rewardMiner(miner)
     .applyTransactions(transactions)
     .get

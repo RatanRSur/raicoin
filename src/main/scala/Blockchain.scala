@@ -4,6 +4,7 @@ import scala.collection.SortedSet
 import scala.util.{Try, Success, Failure}
 import Exceptions._
 import org.apache.commons.codec.binary.Hex
+import scorex.crypto.signatures._
 
 class BlockWithParent(val block: Block, val parent: Option[BlockWithParent]) {
   val index: Int = parent.map(_.index + 1).getOrElse(0)
@@ -77,8 +78,8 @@ class Blockchain(blocksByHash: Map[String, BlockWithParent] = {
     }.toSeq.reverseIterator
 
   def mineBlock(transactions: Seq[Transaction],
-                miner: String,
-                newUsers: Seq[String] = Seq.empty): Blockchain = {
+                miner: PublicKey,
+                newPublicKeys: Seq[PublicKey] = Seq.empty): Blockchain = {
     customRequire(transactions.nonEmpty,
                   new IllegalTransactions("No transactions to put in block."))
     append(
@@ -86,7 +87,7 @@ class Blockchain(blocksByHash: Map[String, BlockWithParent] = {
                      ledger,
                      transactions,
                      miner,
-                     newUsers,
+                     newPublicKeys,
                      difficulty))
   }
 

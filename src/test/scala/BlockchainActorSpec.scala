@@ -7,6 +7,8 @@ import akka.util.Timeout
 import akka.io.Tcp
 import akka.io.IO
 
+import scorex.crypto.signatures._
+
 import scala.concurrent.duration._
 import scala.concurrent.Await
 
@@ -18,7 +20,7 @@ class BlockchainActorSpec extends FunSuiteLike with TestChains {
 
   test("adds received block to blockchain") {
     implicit val system        = ActorSystem()
-    val blockchainActor        = system.actorOf(Props(new BlockchainActor(length2chain)))
+    val blockchainActor        = system.actorOf(Props(new BlockchainActor(length2chain, tiamatPublicKey)))
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
     blockchainActor ! length3chain.tip.block
@@ -37,7 +39,7 @@ class BlockchainActorSpec extends FunSuiteLike with TestChains {
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
 
-    val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain)))
+    val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain, tiamatPublicKey)))
 
     blockchainActor ! Request(1)
     p.expectMsg(tcpWritten(length2chain.tip.block))
@@ -49,12 +51,12 @@ class BlockchainActorSpec extends FunSuiteLike with TestChains {
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
 
-    val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain)))
+    val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain, tiamatPublicKey)))
     val chainA = length2chain
-      .mineBlock(Seq(Transaction("tiamat", "vecna", 1)), "tiamat")
+      .mineBlock(Seq(Transaction(tiamatPublicKey, vecnaPublicKey, 1)), tiamatPublicKey)
     val chainB = length2chain
-      .mineBlock(Seq(Transaction("tiamat", "vecna", 1)), "tiamat")
-      .mineBlock(Seq(Transaction("vecna", "tiamat", 1)), "tiamat")
+      .mineBlock(Seq(Transaction(tiamatPublicKey, vecnaPublicKey, 1)), tiamatPublicKey)
+      .mineBlock(Seq(Transaction(vecnaPublicKey, tiamatPublicKey, 1)), tiamatPublicKey)
 
     blockchainActor ! chainA.tip.block
     blockchainActor ! Request(2)
@@ -71,7 +73,7 @@ class BlockchainActorSpec extends FunSuiteLike with TestChains {
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
 
-    val blockchainActor = system.actorOf(Props(new BlockchainActor(rootOnly)))
+    val blockchainActor = system.actorOf(Props(new BlockchainActor(rootOnly, tiamatPublicKey)))
 
 
     scala.util.Random.shuffle(0 to length4chain.height - 1).foreach {
@@ -79,6 +81,36 @@ class BlockchainActorSpec extends FunSuiteLike with TestChains {
     }
     blockchainActor ! Request(3)
     p.expectMsg(tcpWritten(length4chain(3)))
+    system.terminate()
+  }
+
+  test("mines block when valid transaction received"){
+    implicit val system        = ActorSystem()
+    val p                      = TestProbe("p")(system)
+    implicit val defaultSender = p.testActor
+
+    val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain, tiamatPublicKey)))
+
+    val transaction = Transaction(tiamatPublicKey, vecnaPublicKey, 1)
+    val signedTransaction = Transaction.sign(tiamatPrivateKey, transaction)
+    blockchainActor ! signedTransaction
+    blockchainActor ! Request(2)
+    assert(tcpUnwrap[MinedBlock](p.receiveN(1).head).transactions.head === transaction)
+    system.terminate()
+  }
+
+  test("does not mine block when invalid transaction received"){
+    implicit val system        = ActorSystem()
+    val p                      = TestProbe("p")(system)
+    implicit val defaultSender = p.testActor
+
+    val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain, tiamatPublicKey)))
+
+    val transaction = Transaction(tiamatPublicKey, vecnaPublicKey, 1)
+    val signedTransaction = Transaction.sign(vecnaPrivateKey, transaction)
+    blockchainActor ! signedTransaction
+    blockchainActor ! Request(2)
+    p.expectNoMessage()
     system.terminate()
   }
 

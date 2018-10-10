@@ -3,24 +3,25 @@ package raicoin
 import scala.collection.immutable.ListMap
 import scala.collection.SortedSet
 import scala.util.{Try, Success, Failure}
+import scorex.crypto.signatures._
 import Exceptions._
 
-class Ledger(private val internalLedger: ListMap[String, Long] = ListMap.empty)
-    extends Iterable[(String, Long)]
+class Ledger(private val internalLedger: ListMap[PublicKey, Long] = ListMap.empty)
+    extends Iterable[(PublicKey, Long)]
     with SHAHashable
     with Serializable {
 
   //convenience
-  def apply(x: String): Long              = internalLedger(x)
-  def +(kv: (String, Long)): Ledger       = new Ledger(internalLedger + kv)
-  def contains(userName: String): Boolean = internalLedger.contains(userName)
+  def apply(x: PublicKey): Long              = internalLedger(x)
+  def +(kv: (PublicKey, Long)): Ledger       = new Ledger(internalLedger + kv)
+  def contains(pk: PublicKey): Boolean = internalLedger.contains(pk)
   //from Iterable
   def iterator = internalLedger.iterator
 
-  def rewardMiner(miner: String): Ledger = increase(miner, 1)
-  def addUsers(userNames: Seq[String]): Ledger = (this /: userNames) { (ledger, userName) =>
-    customRequire(!ledger.contains(userName), new UserAlreadyExists(userName))
-    ledger + (userName -> 0)
+  def rewardMiner(miner: PublicKey): Ledger = increase(miner, 1)
+  def addPublicKeys(userNames: Seq[PublicKey]): Ledger = (this /: userNames) { (ledger, pk) =>
+    customRequire(!ledger.contains(pk), new PublicKeyAlreadyExists(pk))
+    ledger + (pk -> 0)
   }
 
   def applyTransactions(transactions: Seq[Transaction]): Try[Ledger] = {
@@ -32,17 +33,17 @@ class Ledger(private val internalLedger: ListMap[String, Long] = ListMap.empty)
 
   val hashDependencies = Seq[SHAHashable](internalLedger).map(_.hash)
 
-  def transfer(senderName: String, recipientName: String, amount: Long): Ledger = {
+  def transfer(senderName: PublicKey, recipientName: PublicKey, amount: Long): Ledger = {
     increase(recipientName, amount).decrease(senderName, amount)
   }
-  private def decrease(userName: String, amount: Long): Ledger =
-    changeBalance(userName, amount, _ - _)
-  private def increase(userName: String, amount: Long): Ledger =
-    changeBalance(userName, amount, _ + _)
-  private def changeBalance(userName: String, amount: Long, op: (Long, Long) => Long): Ledger = {
+  private def decrease(pk: PublicKey, amount: Long): Ledger =
+    changeBalance(pk, amount, _ - _)
+  private def increase(pk: PublicKey, amount: Long): Ledger =
+    changeBalance(pk, amount, _ + _)
+  private def changeBalance(pk: PublicKey, amount: Long, op: (Long, Long) => Long): Ledger = {
     require(amount > 0)
-    val newBalance = op(internalLedger(userName), amount)
-    customRequire(newBalance >= 0, new IllegalTransactions(s"$userName would have $newBalance"))
-    this + (userName -> newBalance)
+    val newBalance = op(internalLedger(pk), amount)
+    customRequire(newBalance >= 0, new IllegalTransactions(s"$pk would have $newBalance"))
+    this + (pk -> newBalance)
   }
 }

@@ -4,6 +4,7 @@ import org.scalatest._
 import scala.util.Random
 import java.security.MessageDigest
 import Exceptions._
+import TestUtils._
 
 class BlockchainSpec extends FunSuite with TestChains {
 
@@ -25,33 +26,33 @@ class BlockchainSpec extends FunSuite with TestChains {
   }
 
   test("can't add user that already exists") {
-    assertThrows[UserAlreadyExists] {
-      length2chain.mineBlock(Seq(Transaction("vecna", "tiamat", 1)), "vecna", Seq("vecna"))
+    assertThrows[PublicKeyAlreadyExists] {
+      length2chain.mineBlock(Seq(Transaction(vecnaPublicKey, tiamatPublicKey, 1)), vecnaPublicKey, Seq(vecnaPublicKey))
     }
   }
 
   test("add block onto blockchain") {
     assert(length2chain.height === 2)
-    assert(length2chain.ledger("vecna") === 0)
-    assert(length2chain.ledger("tiamat") === 1)
+    assert(length2chain.ledger(vecnaPublicKey) === 0)
+    assert(length2chain.ledger(tiamatPublicKey) === 1)
   }
 
   test("can't send more tokens than you have") {
-    val transactions = Seq(Transaction("vecna", "tiamat", 5), Transaction("tiamat", "vecna", 5))
+    val transactions = Seq(Transaction(vecnaPublicKey, tiamatPublicKey, 5), Transaction(tiamatPublicKey, vecnaPublicKey, 5))
     assertThrows[IllegalTransactions] {
-      rootOnly.mineBlock(transactions, "vecna", Seq("vecna", "tiamat"))
+      rootOnly.mineBlock(transactions, vecnaPublicKey, Seq(vecnaPublicKey, tiamatPublicKey))
     }
   }
 
   test("can't send yourself tokens") {
     assertThrows[IllegalTransactions] {
-      Transaction("vecna", "vecna", 1)
+      Transaction(vecnaPublicKey, vecnaPublicKey, 1)
     }
   }
 
   test("every block must have at least 1 transaction") {
     assertThrows[IllegalTransactions] {
-      rootOnly.mineBlock(Seq(), "vecna", Seq("vecna"))
+      rootOnly.mineBlock(Seq(), vecnaPublicKey, Seq(vecnaPublicKey))
     }
   }
 
