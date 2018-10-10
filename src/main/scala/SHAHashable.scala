@@ -5,6 +5,8 @@ import java.nio.ByteBuffer
 import scala.collection.SortedSet
 import scala.collection.immutable.ListMap
 
+import scorex.crypto.signatures._
+
 trait SHAHashable {
   @transient protected val sha = MessageDigest.getInstance("SHA-256")
 
@@ -28,8 +30,8 @@ trait SHAHashable {
     val hashDependencies = collection.map(_.hash).toSeq
   }
 
-  implicit class HashableListMap(collection: ListMap[String, Long]) extends SHAHashable {
-    val hashDependencies = collection.flatMap { case (k, v) => Seq(k.hash, v.hash) }.toSeq
+  implicit class HashableListMap(collection: ListMap[PublicKey, Long]) extends SHAHashable {
+    val hashDependencies = collection.flatMap { case (k, v) => Seq(k, v.hash) }.toSeq
   }
 
   implicit class HashableLong(long: Long) extends SHAHashable {
