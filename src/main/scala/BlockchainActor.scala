@@ -11,6 +11,7 @@ import akka.util.ByteString
 import Serializer._
 import org.apache.commons.codec.binary.Hex
 import java.util.UUID._
+import scorex.crypto.signatures._
 
 case object Broadcast
 case class Request(index: Int)
@@ -32,6 +33,7 @@ object BlockchainActor {
 }
 
 class BlockchainActor(var blockchain: Blockchain,
+                      publicKey: PublicKey,
                       val startingPeer: Option[PeerInfo] = Some(BlockchainActor.BootstrapPeerInfo))
     extends Actor {
 
@@ -101,7 +103,7 @@ class BlockchainActor(var blockchain: Blockchain,
       }
     }
     case Tcp.Received(data) => {
-      println(s"${system.name}: ${fromByteString(data)}")
+      //println(s"${system.name}: ${fromByteString(data)}")
       self.!(fromByteString(data))(sender())
     }
     case GetPeers => {
@@ -122,6 +124,11 @@ class BlockchainActor(var blockchain: Blockchain,
           knownPeers += pi
           tcpManager ! Tcp.Connect(pi.inetSocketAddress)
         }
+      }
+    }
+    case st @ SignedTransaction(signature, transaction) => {
+      if (Transaction.verify(st, transaction.sender)) {
+        blockchain = blockchain.mineBlock(Seq(transaction), publicKey)
       }
     }
     case Disconnect => {

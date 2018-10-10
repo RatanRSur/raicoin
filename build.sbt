@@ -10,6 +10,7 @@ lazy val root = (project in file(".")).settings(
     "com.typesafe.akka"  %% "akka-actor"   % "2.5.12",
     "com.typesafe.akka"  %% "akka-testkit" % "2.5.12" % Test,
     "commons-codec"      % "commons-codec" % "1.11",
+    "org.scorexfoundation" %% "scrypto" % "2.1.2",
     "org.apache.commons" % "commons-lang3" % "3.7"
   ),
   scalacOptions += "-feature",
