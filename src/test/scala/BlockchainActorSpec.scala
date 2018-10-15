@@ -14,7 +14,7 @@ import scala.concurrent.Await
 
 import TestUtils._
 
-class BlockchainActorSpec extends FunSuiteLike with TestChains {
+class BlockchainActorSpec extends FunSuiteLike {
 
   val timeout = 10.millis
 
@@ -53,10 +53,10 @@ class BlockchainActorSpec extends FunSuiteLike with TestChains {
 
     val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain, tiamatPublicKey)))
     val chainA = length2chain
-      .mineBlock(Seq(Transaction(tiamatPublicKey, vecnaPublicKey, 1)), tiamatPublicKey)
+      .mineBlock(Seq(testTransactions(1)), tiamatPublicKey)
     val chainB = length2chain
-      .mineBlock(Seq(Transaction(tiamatPublicKey, vecnaPublicKey, 1)), tiamatPublicKey)
-      .mineBlock(Seq(Transaction(vecnaPublicKey, tiamatPublicKey, 1)), tiamatPublicKey)
+      .mineBlock(Seq(testTransactions(1)), tiamatPublicKey)
+      .mineBlock(Seq(testTransactions(2)), tiamatPublicKey)
 
     blockchainActor ! chainA.tip.block
     blockchainActor ! Request(2)
@@ -92,7 +92,7 @@ class BlockchainActorSpec extends FunSuiteLike with TestChains {
     val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain, tiamatPublicKey)))
 
     val transaction = Transaction(tiamatPublicKey, vecnaPublicKey, 1)
-    val signedTransaction = Transaction.sign(tiamatPrivateKey, transaction)
+    val signedTransaction = transaction.sign(tiamatPrivateKey)
     blockchainActor ! signedTransaction
     blockchainActor ! Request(2)
     assert(tcpUnwrap[MinedBlock](p.receiveN(1).head).transactions.head === transaction)
@@ -107,10 +107,34 @@ class BlockchainActorSpec extends FunSuiteLike with TestChains {
     val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain, tiamatPublicKey)))
 
     val transaction = Transaction(tiamatPublicKey, vecnaPublicKey, 1)
-    val signedTransaction = Transaction.sign(vecnaPrivateKey, transaction)
-    blockchainActor ! signedTransaction
+    val invalidTransaction = transaction.sign(vecnaPrivateKey)
+    blockchainActor ! invalidTransaction
     blockchainActor ! Request(2)
     p.expectNoMessage()
+    system.terminate()
+  }
+
+  test("rejects block with invalid transactions"){
+    implicit val system        = ActorSystem()
+    val p                      = TestProbe("p")(system)
+    implicit val defaultSender = p.testActor
+
+    val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain, tiamatPublicKey)))
+
+    val transaction = Transaction(tiamatPublicKey, vecnaPublicKey, 1)
+    val invalidTransaction = transaction.sign(vecnaPrivateKey)
+    val invalidBlock =
+      length2chain.mineBlock(Seq(invalidTransaction), vecnaPublicKey).tip.block
+    val validTransaction = transaction.sign(tiamatPrivateKey)
+    val validBlock =
+      length2chain.mineBlock(Seq(validTransaction), vecnaPublicKey).tip.block
+
+    blockchainActor ! invalidBlock
+    blockchainActor ! Request(2)
+    p.expectNoMessage(1.seconds)
+    blockchainActor ! validBlock
+    blockchainActor ! Request(2)
+    p.receiveN(1)
     system.terminate()
   }
 

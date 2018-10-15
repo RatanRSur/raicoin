@@ -6,7 +6,7 @@ import java.security.MessageDigest
 import Exceptions._
 import TestUtils._
 
-class BlockchainSpec extends FunSuite with TestChains {
+class BlockchainSpec extends FunSuite {
 
   def randomUserName = Random.nextString(5)
 
@@ -27,7 +27,7 @@ class BlockchainSpec extends FunSuite with TestChains {
 
   test("can't add user that already exists") {
     assertThrows[PublicKeyAlreadyExists] {
-      length2chain.mineBlock(Seq(Transaction(vecnaPublicKey, tiamatPublicKey, 1)), vecnaPublicKey, Seq(vecnaPublicKey))
+      length2chain.mineBlock(Seq(testTransactions(0)), vecnaPublicKey, Seq(vecnaPublicKey))
     }
   }
 
@@ -38,7 +38,11 @@ class BlockchainSpec extends FunSuite with TestChains {
   }
 
   test("can't send more tokens than you have") {
-    val transactions = Seq(Transaction(vecnaPublicKey, tiamatPublicKey, 5), Transaction(tiamatPublicKey, vecnaPublicKey, 5))
+    val transactions = Seq(Transaction(vecnaPublicKey, tiamatPublicKey, 5), Transaction(tiamatPublicKey, vecnaPublicKey, 5)).map { tx =>
+      val keyToSignWith =
+        if (tx.sender == tiamatPublicKey) tiamatPrivateKey else vecnaPrivateKey
+      tx.sign(keyToSignWith)
+    }
     assertThrows[IllegalTransactions] {
       rootOnly.mineBlock(transactions, vecnaPublicKey, Seq(vecnaPublicKey, tiamatPublicKey))
     }
