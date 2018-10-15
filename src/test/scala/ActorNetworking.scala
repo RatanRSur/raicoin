@@ -11,7 +11,7 @@ import Serializer._
 import akka.io.Tcp
 import TestUtils._
 
-class ActorNetworking extends FunSuiteLike with TestChains {
+class ActorNetworking extends FunSuiteLike {
 
   test("remote actor automatically finds local actor and updates itself") {
 
@@ -78,7 +78,7 @@ class ActorNetworking extends FunSuiteLike with TestChains {
     implicit val defaultSender = p.testActor
 
     actorC ! GetPeerInfo
-    val cInfo = fromByteString(p.receiveN(1).head.asInstanceOf[Tcp.Write].data).asInstanceOf[PeerInfo]
+    val cInfo = tcpUnwrap[PeerInfo](p.receiveN(1).head)
 
     val systemD = ActorSystem("D")
     val actorD  = systemD.actorOf(Props(new BlockchainActor(rootOnly, tiamatPublicKey, Some(cInfo))), "D")
