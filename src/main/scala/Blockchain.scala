@@ -74,15 +74,15 @@ class Blockchain(blocksByHash: Map[String, BlockWithParent] = {
       }
     }.toSeq.reverseIterator
 
-  def mineBlock(transactions: Seq[Transaction],
+  def mineBlock(signedTransactions: Seq[SignedTransaction],
                 miner: PublicKey,
                 newPublicKeys: Seq[PublicKey] = Seq.empty): Blockchain = {
-    customRequire(transactions.nonEmpty,
+    customRequire(signedTransactions.nonEmpty,
                   new IllegalTransactions("No transactions to put in block."))
     append(
       new MinedBlock(Hex.encodeHexString(tip.block.hash),
                      ledger,
-                     transactions,
+                     signedTransactions,
                      miner,
                      newPublicKeys,
                      difficulty))

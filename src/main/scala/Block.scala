@@ -18,12 +18,14 @@ object EmptyRootBlock extends RootBlock()
 
 case class MinedBlock(val parentHash: String,
                       parentLedger: Ledger,
-                      transactions: Seq[Transaction],
+                      signedTransactions: Seq[SignedTransaction],
                       miner: PublicKey,
                       newPublicKeys: Seq[PublicKey],
                       difficulty: Int,
                       checkNonce: Option[Int] = None)
     extends Block {
+
+  val transactions = signedTransactions.map(_.transaction)
 
   val ledger = parentLedger
     .addPublicKeys(newPublicKeys)

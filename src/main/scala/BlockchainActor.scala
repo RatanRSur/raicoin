@@ -61,10 +61,15 @@ class BlockchainActor(var blockchain: Blockchain,
   def receive = {
     case block: MinedBlock => {
       // new* assignments to get around scala limitations of multiple assignment
-      val (newBlockchain, newOrphans) =
-        blockchain.resolveOrphans(orphans :+ block)
-      blockchain = newBlockchain
-      orphans = newOrphans
+      //println(s"${system.name} $blockchain")
+      if (block.signedTransactions.forall(_.verify)) {
+
+        val (newBlockchain, newOrphans) = blockchain.resolveOrphans(orphans :+ block)
+        blockchain = newBlockchain
+        orphans = newOrphans
+
+      }
+      //println(s"${system.name} $blockchain")
     }
     case RequestBlocksSince(index) => {
       (index until blockchain.height).map(i => blockchain(i)).foreach {
@@ -126,8 +131,8 @@ class BlockchainActor(var blockchain: Blockchain,
       }
     }
     case st @ SignedTransaction(signature, transaction) => {
-      if (Transaction.verify(st, transaction.sender)) {
-        blockchain = blockchain.mineBlock(Seq(transaction), publicKey)
+      if (st.verify) {
+        blockchain = blockchain.mineBlock(Seq(st), publicKey)
       }
     }
     case other => {

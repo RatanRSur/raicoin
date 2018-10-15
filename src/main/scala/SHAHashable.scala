@@ -11,7 +11,7 @@ trait SHAHashable {
   @transient protected val sha = MessageDigest.getInstance("SHA-256")
 
   val hashDependencies: Seq[Array[Byte]]
-  lazy val hash: Array[Byte] = {
+  def hash: Array[Byte] = {
     hashDependencies.foreach(sha.update)
     sha.digest
   }
