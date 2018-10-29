@@ -7,14 +7,7 @@ import scala.collection.immutable.ListMap
 
 import scorex.crypto.signatures._
 
-trait SHAHashable {
-  @transient protected val sha = MessageDigest.getInstance("SHA-256")
-
-  val hashDependencies: Seq[Array[Byte]]
-  def hash: Array[Byte] = {
-    hashDependencies.foreach(sha.update)
-    sha.digest
-  }
+object HashImplicits extends Serializable {
 
   // TODO: martin odersky says to make the implicits as specific as possible
   // I think he means that I should merge these and use the type condition set in hashable seq
@@ -22,26 +15,49 @@ trait SHAHashable {
   // I ran into problems doing this for HashableSet because it's element type (String)
   // would itself need to be implicitly converted to HashableString so the compiler complained
   // about string not being hashable
-  implicit class HashableSeq[A <: SHAHashable](collection: Seq[A]) extends SHAHashable {
-    val hashDependencies = collection.map(_.hash)
-  }
-
-  implicit class HashableSet(collection: SortedSet[String]) extends SHAHashable {
-    val hashDependencies = collection.map(_.hash).toSeq
-  }
-
-  implicit class HashableListMap(collection: ListMap[PublicKey, Long]) extends SHAHashable {
-    val hashDependencies = collection.flatMap { case (k, v) => Seq(k, v.hash) }.toSeq
-  }
-
-  implicit class HashableLong(long: Long) extends SHAHashable {
-    val hashDependencies = {
-      val buf = ByteBuffer.allocate(8).putLong(long)
-      Seq(buf.array)
+  implicit class HashableSeq[A <: SHAHashable](collection: Seq[A]) extends SHAHashable with Serializable {
+    val hash: Array[Byte] = {
+      val sha = MessageDigest.getInstance("SHA-256")
+      collection.map(_.hash).foreach(sha.update)
+      sha.digest
     }
   }
 
-  implicit class HashableString(string: String) extends SHAHashable {
-    val hashDependencies = Seq(string.getBytes("UTF-8"))
+  implicit class HashableSet(collection: SortedSet[String]) extends SHAHashable with Serializable {
+    val hash: Array[Byte] = {
+      val sha = MessageDigest.getInstance("SHA-256")
+      collection.map(_.hash).foreach(sha.update)
+      sha.digest
+    }
   }
+
+  implicit class HashableListMap(collection: ListMap[PublicKey, Long]) extends SHAHashable with Serializable {
+    val hash: Array[Byte] = {
+      val sha = MessageDigest.getInstance("SHA-256")
+      collection.flatMap { case (k, v) => Seq(k, v.hash) }.foreach(sha.update)
+      sha.digest
+    }
+  }
+
+  implicit class HashableLong(long: Long) extends SHAHashable with Serializable {
+    val hash: Array[Byte] = {
+      val sha = MessageDigest.getInstance("SHA-256")
+      val buf = ByteBuffer.allocate(8).putLong(long)
+      sha.update(buf)
+      sha.digest
+    }
+  }
+
+  implicit class HashableString(string: String) extends SHAHashable with Serializable {
+    val hash: Array[Byte] = {
+      val sha = MessageDigest.getInstance("SHA-256")
+      sha.update(string.getBytes("UTF-8"))
+      sha.digest
+    }
+  }
+}
+
+trait SHAHashable {
+  import HashImplicits._
+  val hash: Array[Byte]
 }

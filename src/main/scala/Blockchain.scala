@@ -75,12 +75,12 @@ class Blockchain(blocksByHash: Map[String, Block] = Map((Hex.encodeHexString(Emp
   def mineBlock(signedTransactions: Seq[SignedTransaction],
                 miner: PublicKey): Blockchain = {
     append(
-      new MinedBlock(Hex.encodeHexString(tip.hash),
+      new UnminedBlock(Hex.encodeHexString(tip.hash),
                      tip.index,
                      ledger,
                      signedTransactions,
                      miner,
-                     difficulty))
+                     difficulty).mine)
   }
 
   override val toString: String =

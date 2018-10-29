@@ -61,10 +61,10 @@ class ActorNetworking extends FunSuiteLike {
   test("changes propagate through a bigger system") {
 
     val systemA = ActorSystem("A")
-    val actorA  = systemA.actorOf(Props(new BlockchainActor(length4chain, tiamatPublicKey, None)), "A")
+    val actorA  = systemA.actorOf(Props(new BlockchainActor(rootOnly, tiamatPublicKey, None)), "A")
 
     val systemB = ActorSystem("B")
-    val actorB  = systemB.actorOf(Props(new BlockchainActor(rootOnly, tiamatPublicKey)), "B")
+    val actorB  = systemB.actorOf(Props(new BlockchainActor(length4chain, tiamatPublicKey)), "B")
 
     Thread.sleep(500)
 

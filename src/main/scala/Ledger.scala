@@ -1,5 +1,6 @@
 package raicoin
 
+import java.security.MessageDigest
 import scala.collection.immutable.ListMap
 import scala.collection.SortedSet
 import scala.util.{Try, Success, Failure}
@@ -27,7 +28,12 @@ class Ledger(private val internalLedger: ListMap[PublicKey, Long] = ListMap.empt
     Success(ret)
   }
 
-  val hashDependencies = Seq[SHAHashable](internalLedger).map(_.hash)
+  import HashImplicits._
+  val hash = {
+    val sha = MessageDigest.getInstance("SHA-256")
+    sha.update(internalLedger.hash)
+    sha.digest
+  }
 
   def transfer(senderName: PublicKey, recipientName: PublicKey, amount: Long): Ledger = {
     increase(recipientName, amount).decrease(senderName, amount)
