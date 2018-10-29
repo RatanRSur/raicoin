@@ -2,6 +2,7 @@ package raicoin
 
 import Exceptions._
 
+import java.security.MessageDigest
 import akka.util.ByteString
 import scorex.crypto._
 import scorex.crypto.signatures._
@@ -18,7 +19,12 @@ case class SignedTransaction(signature: ByteString, transaction: Transaction) {
 case class Transaction(sender: PublicKey, recipient: PublicKey, amount: Int)
     extends SHAHashable {
   customRequire(sender != recipient, new IllegalTransactions("sender cannot also be recipient"))
-  val hashDependencies = Seq(sender, recipient, amount.hash)
+  import HashImplicits._
+  val hash = {
+    val sha = MessageDigest.getInstance("SHA-256")
+    Seq(sender, recipient, amount.hash).foreach(sha.update)
+    sha.digest
+  }
   override def equals(that: Any): Boolean = {
     that match {
       case that: Transaction => sender.deep == that.sender.deep && recipient.deep == that.recipient.deep && amount == that.amount
