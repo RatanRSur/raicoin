@@ -17,7 +17,7 @@ object Raicoin {
     println(asciiArt)
     println("Public Private Key Pair")
     println("[G]enerate or [P]rovide as file?")
-    val keyGenerationNeeded = "Gg".contains(getCharOneof("GgPp"))
+    val keyGenerationNeeded = "Gg".contains(readCharOneOf("GgPp"))
     val (privateKey, publicKey) = if (keyGenerationNeeded) {
       val (privKey, pubKey): (PrivateKey, PublicKey) = Curve25519.createKeyPair
       print("Directory to save raicoin.pub, raicoin.priv: ")
@@ -52,12 +52,12 @@ object Raicoin {
        new File(directoryName, privateKeyName)).asInstanceOf[PublicKey])
   }
 
-  def getCharOneof(validChars: String): Char = {
+  def readCharOneOf(validChars: String): Char = {
     val keypress = readChar()
     if (validChars.contains(keypress)) keypress
     else {
       println(s"Invalid choice. Choose one of: [$validChars]")
-      getCharOneof(validChars)
+      readCharOneOf(validChars)
     }
   }
 
