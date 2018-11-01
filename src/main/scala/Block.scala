@@ -10,7 +10,7 @@ abstract class Block extends SHAHashable with Serializable {
 
 case class RootBlock(val ledger: Ledger = new Ledger()) extends Block {
   val hashDependencies = Seq(ledger.hash)
-  override lazy val toString: String =
+  override val toString: String =
     s"${getClass.getName}(hash: ${Hex.encodeHexString(hash).take(6)}...)"
 }
 

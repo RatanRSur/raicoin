@@ -1,5 +1,6 @@
 package raicoin
 import org.scalatest._
+import org.apache.commons.lang3.SerializationUtils.serialize
 
 import TestUtils._
 
@@ -10,5 +11,12 @@ class SerializationBug extends FunSuiteLike {
     assert(signedTx1.verify)
     signedTx1.transaction.hash
     assert(signedTx1.verify)
+  }
+
+  test("RootBlook toString does not change serialization"){
+    val rb = new RootBlock()
+    val bytesBeforeToString = serialize(rb)
+    rb.toString
+    assert(serialize(rb) === bytesBeforeToString)
   }
 }
