@@ -11,7 +11,10 @@ import akka.util.ByteString
 import Serializer._
 import org.apache.commons.codec.binary.Hex
 import java.util.UUID._
+import java.io.File
 import scorex.crypto.signatures._
+import org.apache.commons.lang3.SerializationUtils.{serialize, deserialize}
+import org.apache.commons.io.FileUtils
 
 case object Broadcast
 case class Request(index: Int)
@@ -27,6 +30,8 @@ case object PeerInfo {
 }
 case object GetPeerInfo
 case object Disconnect
+case class Save(directoryName: String)
+case class Load(directoryName: String)
 
 object BlockchainActor {
   val BootstrapPeerInfo = PeerInfo("55f119f3-c33b-4078-92e5-923f6cd200f2", "localhost", 6364)
@@ -140,6 +145,16 @@ class BlockchainActor(var blockchain: Blockchain,
       connectedPeers.keys.foreach { connection =>
         connection ! Tcp.ConfirmedClose
       }
+    }
+    case Save(directoryName) => {
+      import sys.process._
+      FileUtils.writeByteArrayToFile(
+        new File(directoryName, "raicoin.chain"),
+        serialize(blockchain))
+    }
+    case Load(directoryName) => {
+      blockchain = deserialize(
+        FileUtils.readFileToByteArray(new File(directoryName, "raicoin.chain")))
     }
     case other => {
       println(s"Unexpected Message: ${context.system}: $other")

@@ -12,6 +12,8 @@ import scorex.crypto.signatures._
 import scala.concurrent.duration._
 import scala.concurrent.Await
 
+import java.nio.file.{Files, Paths}
+
 import TestUtils._
 
 class BlockchainActorSpec extends FunSuiteLike {
@@ -137,5 +139,30 @@ class BlockchainActorSpec extends FunSuiteLike {
     p.receiveN(1)
     system.terminate()
   }
+
+  test("can save and load blockchain") {
+    implicit val system        = ActorSystem()
+    val p                      = TestProbe("p")(system)
+    implicit val defaultSender = p.testActor
+
+    val blockchainActor = system.actorOf(Props(new BlockchainActor(length3chain, tiamatPublicKey)))
+    val length4chainActor = system.actorOf(Props(new BlockchainActor(length4chain, tiamatPublicKey)))
+
+    val savePath = Paths.get("raicoin.chain")
+    val saveDirPathName = savePath.toAbsolutePath.getParent.toString
+    try {
+      blockchainActor ! Request(3)
+      p.expectNoMessage(100.millis)
+      length4chainActor ! Save(saveDirPathName)
+      p.expectNoMessage(100.millis)
+      blockchainActor ! Load(saveDirPathName)
+      blockchainActor ! Request(3)
+      p.expectMsg(tcpWritten(length4chain(3)))
+      Await.result(system.terminate(), Duration.Inf)
+    } finally {
+      Files.deleteIfExists(savePath)
+    }
+  }
+
 
 }

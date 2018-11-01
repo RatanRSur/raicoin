@@ -6,14 +6,14 @@ import Exceptions._
 import org.apache.commons.codec.binary.Hex
 import scorex.crypto.signatures._
 
-class BlockWithParent(val block: Block, val parent: Option[BlockWithParent]) {
+class BlockWithParent(val block: Block, val parent: Option[BlockWithParent]) extends Serializable {
   val index: Int = parent.map(_.index + 1).getOrElse(0)
 }
 
 class Blockchain(blocksByHash: Map[String, BlockWithParent] = {
   Map((Hex.encodeHexString(EmptyRootBlock.hash) -> new BlockWithParent(EmptyRootBlock, None)))
 }, tips: Seq[BlockWithParent] = Seq(new BlockWithParent(EmptyRootBlock, None)))
-    extends Iterable[Block] {
+    extends Iterable[Block] with Serializable {
 
   val tip             = tips.head
   val difficulty      = 1
