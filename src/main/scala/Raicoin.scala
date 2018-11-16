@@ -15,7 +15,9 @@ object Raicoin {
   val publicKeyName = s"$keyBasename.pub"
 
   def main(args: Array[String]): Unit = {
-    println(asciiArt)
+    if (!args.contains("-q")) {
+      println(asciiArt)
+    }
     println("Public Private Key Pair")
     println("[G]enerate or [P]rovide as file?")
     val keyGenerationNeeded = "Gg".contains(readCharOneOf("GgPp"))
