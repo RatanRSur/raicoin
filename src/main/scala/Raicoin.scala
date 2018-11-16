@@ -11,6 +11,7 @@ import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
 import scala.concurrent.duration._
+import scala.concurrent.Await
 
 object Raicoin {
   val keyBasename = "raicoin"
@@ -57,7 +58,11 @@ object Raicoin {
       val command = readLine().trim
       command match {
         case "save" => blockchainActor ! Save(".")
-        case "balance" => blockchainActor.ask(Balance(publicKey))(1.seconds).foreach(println)
+        case "balance" => println(Await.result(blockchainActor.ask(Balance(publicKey))(1.seconds), Duration.Inf))
+        case "mining start" => blockchainActor ! StartMining
+        case "mining stop" => blockchainActor ! StopMining
+        case "" => ()
+        case _ => println("Invalid command")
       }
     }
   }
