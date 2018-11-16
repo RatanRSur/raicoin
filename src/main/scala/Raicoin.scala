@@ -8,6 +8,9 @@ import org.apache.commons.io.FilenameUtils
 import java.io.File
 import java.nio.file.Paths
 import akka.actor._
+import akka.pattern.ask
+import akka.util.Timeout
+import scala.concurrent.duration._
 
 object Raicoin {
   val keyBasename = "raicoin"
@@ -47,6 +50,15 @@ object Raicoin {
       system.actorOf(Props(new BlockchainActor(new Blockchain(), publicKey)))
     }
 
+    import scala.concurrent.ExecutionContext.Implicits.global
+    while (true) {
+      print("> ")
+      val command = readLine().trim
+      command match {
+        case "save" => blockchainActor ! Save(".")
+        case "balance" => blockchainActor.ask(Balance(publicKey))(1.seconds).foreach(println)
+      }
+    }
   }
 
   def readDirectory(): String = {
