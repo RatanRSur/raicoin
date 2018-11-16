@@ -44,8 +44,9 @@ object Raicoin {
     val chainLoadingNeeded = "Ll".contains(readCharOneOf("LlRr"))
     val blockchainActor = if (chainLoadingNeeded) {
       print("Directory where raicoin.chain is saved: ")
+      val directory = readDirectory()
       system.actorOf(
-        Props(BlockchainActor.fromSavedBlockchain(readDirectory() + "raicoin.chain", publicKey)))
+        Props(BlockchainActor.fromSavedBlockchain(directory + "raicoin.chain", publicKey)))
     } else {
       system.actorOf(Props(new BlockchainActor(new Blockchain(), publicKey)))
     }
