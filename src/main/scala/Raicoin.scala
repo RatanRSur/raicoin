@@ -39,10 +39,10 @@ object Raicoin {
     val system  = ActorSystem()
     println("[L]oad existing chain, [R]etrieve from network?")
     val chainLoadingNeeded = "Ll".contains(readCharOneOf("LlRr"))
-    val blockChainActor = if (chainLoadingNeeded) {
+    val blockchainActor = if (chainLoadingNeeded) {
       print("Directory where raicoin.chain is saved: ")
       system.actorOf(
-        Props(BlockchainActor.fromSavedBlockchain(readDirectory(), publicKey)))
+        Props(BlockchainActor.fromSavedBlockchain(readDirectory() + "raicoin.chain", publicKey)))
     } else {
       system.actorOf(Props(new BlockchainActor(new Blockchain(), publicKey)))
     }
