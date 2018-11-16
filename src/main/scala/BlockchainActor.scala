@@ -32,6 +32,8 @@ case object GetPeerInfo
 case object Disconnect
 case class Save(directoryName: String)
 case class Load(directoryName: String)
+case object StartMining
+case object StopMining
 
 object BlockchainActor {
   val BootstrapPeerInfo = PeerInfo("55f119f3-c33b-4078-92e5-923f6cd200f2", "localhost", 6364)
@@ -64,7 +66,17 @@ class BlockchainActor(var blockchain: Blockchain,
     case None => tcpManager ! Tcp.Bind(self, BootstrapPeerInfo.inetSocketAddress)
   }
 
-  def receive = {
+  def mining: Receive = initial.orElse[Any, Unit] {
+    case st @ SignedTransaction(signature, transaction) => {
+      if (st.verify) {
+        blockchain = blockchain.mineBlock(Seq(st), publicKey)
+      }
+    }
+    case StopMining => unbecome()
+  }.orElse(logOther)
+
+  def initial: Receive = {
+    case StartMining => become(mining)
     case block: MinedBlock => {
       // new* assignments to get around scala limitations of multiple assignment
       //println(s"${system.name} $blockchain")
@@ -136,11 +148,6 @@ class BlockchainActor(var blockchain: Blockchain,
         }
       }
     }
-    case st @ SignedTransaction(signature, transaction) => {
-      if (st.verify) {
-        blockchain = blockchain.mineBlock(Seq(st), publicKey)
-      }
-    }
     case Disconnect => {
       connectedPeers.keys.foreach { connection =>
         connection ! Tcp.ConfirmedClose
@@ -156,8 +163,14 @@ class BlockchainActor(var blockchain: Blockchain,
       blockchain = deserialize(
         FileUtils.readFileToByteArray(new File(directoryName, "raicoin.chain")))
     }
+  }
+
+
+  def logOther: Receive = {
     case other => {
-      println(s"Unexpected Message: ${context.system}: $other")
+      println(s"Unhandled Message: ${context.system}: $other")
     }
   }
+
+  def receive = initial.orElse(logOther)
 }

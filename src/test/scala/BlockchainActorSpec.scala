@@ -86,7 +86,7 @@ class BlockchainActorSpec extends FunSuiteLike {
     system.terminate()
   }
 
-  test("mines block when valid transaction received"){
+  test("mines block iff valid transaction received and is mining"){
     implicit val system        = ActorSystem()
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
@@ -97,7 +97,15 @@ class BlockchainActorSpec extends FunSuiteLike {
     val signedTransaction = transaction.sign(tiamatPrivateKey)
     blockchainActor ! signedTransaction
     blockchainActor ! Request(2)
+    p.expectNoMessage(1.seconds)
+    blockchainActor ! StartMining
+    blockchainActor ! signedTransaction
+    blockchainActor ! Request(2)
     assert(tcpUnwrap[MinedBlock](p.receiveN(1).head).transactions.head === transaction)
+    blockchainActor ! StopMining
+    blockchainActor ! signedTransaction
+    blockchainActor ! Request(3)
+    p.expectNoMessage(1.seconds)
     system.terminate()
   }
 
@@ -110,6 +118,7 @@ class BlockchainActorSpec extends FunSuiteLike {
 
     val transaction = Transaction(tiamatPublicKey, vecnaPublicKey, 1)
     val invalidTransaction = transaction.sign(vecnaPrivateKey)
+    blockchainActor ! StartMining
     blockchainActor ! invalidTransaction
     blockchainActor ! Request(2)
     p.expectNoMessage()
