@@ -67,7 +67,7 @@ class BlockchainActor(var blockchain: Blockchain,
   }
 
   def mining: Receive = initial.orElse[Any, Unit] {
-    case st @ SignedTransaction(signature, transaction) => {
+    case st: SignedTransaction => {
       if (st.verify) {
         blockchain = blockchain.mineBlock(Seq(st), publicKey)
       }
@@ -94,7 +94,7 @@ class BlockchainActor(var blockchain: Blockchain,
         block => sender() ! Tcp.Write(toByteString(block))
       }
     }
-    case r @ Request(index) => {
+    case Request(index) => {
       if (index < blockchain.height) {
         sender() ! Tcp.Write(toByteString(blockchain(index)))
       }
@@ -107,7 +107,7 @@ class BlockchainActor(var blockchain: Blockchain,
         }
       }
     }
-    case Tcp.Connected(remoteAddress, localAddress) => {
+    case _: Tcp.Connected => {
       val peerRef = sender()
 
       peerRef ! Tcp.Register(context.self)
@@ -135,7 +135,7 @@ class BlockchainActor(var blockchain: Blockchain,
         }
       }
     }
-    case pi @ PeerInfo(id, hostname, port) => {
+    case pi: PeerInfo => {
       val currentConnection = sender()
       if (!myPeerInfo.contains(pi)) {
         if (connectedPeers(currentConnection).isEmpty) {
