@@ -3,6 +3,7 @@ package raicoin
 import scala.io.StdIn._
 import scorex.crypto._
 import scorex.crypto.signatures._
+import org.apache.commons.codec.binary.Hex._
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import java.io.File
@@ -54,14 +55,14 @@ object Raicoin {
 
     import scala.concurrent.ExecutionContext.Implicits.global
     while (true) {
-      print("> ")
-      val command = readLine().trim
+      val command = Option(readLine("> ")).getOrElse("exit").trim
       command match {
         case "save" => blockchainActor ! Save(".")
         case "balance" => println(Await.result(blockchainActor.ask(Balance(publicKey))(1.seconds), Duration.Inf))
         case "mining start" => blockchainActor ! StartMining
         case "mining stop" => blockchainActor ! StopMining
         case "" => ()
+        case "exit" => sys.exit(0)
         case _ => println("Invalid command")
       }
     }
