@@ -204,7 +204,7 @@ class BlockchainActor(var blockchain: Blockchain,
     case Balance(publicKey) => sender() ! blockchain.ledger(publicKey)
     case Height             => sender() ! blockchain.height
     case other => {
-      println(s"Unhandled Message: ${context.system}: $other")
+      //println(s"Unhandled Message: ${context.system}: $other")
     }
   }
 }
