@@ -95,17 +95,14 @@ class BlockchainActorSpec extends FunSuiteLike {
 
     val transaction = Transaction(tiamatPublicKey, vecnaPublicKey, 1)
     val signedTransaction = transaction.sign(tiamatPrivateKey)
-    blockchainActor ! signedTransaction
-    blockchainActor ! Request(2)
-    p.expectNoMessage(1.seconds)
     blockchainActor ! StartMining
     blockchainActor ! signedTransaction
     blockchainActor ! Request(2)
-    assert(tcpUnwrap[MinedBlock](p.receiveN(1).head).transactions.head === transaction)
+    assert(tcpUnwrap[MinedBlock](p.receiveOne(1.seconds)).transactions.contains(transaction))
     blockchainActor ! StopMining
     blockchainActor ! signedTransaction
     blockchainActor ! Request(3)
-    p.expectNoMessage(1.seconds)
+    assert(!tcpUnwrap[MinedBlock](p.receiveOne(1.seconds)).transactions.contains(transaction))
     system.terminate()
   }
 
@@ -146,6 +143,24 @@ class BlockchainActorSpec extends FunSuiteLike {
     blockchainActor ! validBlock
     blockchainActor ! Request(2)
     p.receiveN(1)
+    system.terminate()
+  }
+
+  test("mining blockchain should have some value in account by the end"){
+    implicit val system        = ActorSystem()
+    val p                      = TestProbe("p")(system)
+    implicit val defaultSender = p.testActor
+
+    val blockchainActor = system.actorOf(Props(new BlockchainActor(rootOnly, tiamatPublicKey)))
+
+    blockchainActor ! StartMining
+    retriesOnTimeout(1) {
+      blockchainActor ! Request(1)
+      p.receiveN(1)
+    }
+    blockchainActor ! Balance(tiamatPublicKey)
+    val accountBalance = p.receiveN(1).head.asInstanceOf[Long]
+    assert(accountBalance > 0)
     system.terminate()
   }
 

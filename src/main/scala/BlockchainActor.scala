@@ -32,8 +32,10 @@ case object GetPeerInfo
 case object Disconnect
 case class Save(directoryName: String)
 case class Load(directoryName: String)
+case class Balance(publicKey: PublicKey)
 case object StartMining
 case object StopMining
+case object MineEmptyBlockIfIdle
 
 object BlockchainActor {
   val BootstrapPeerInfo = PeerInfo("55f119f3-c33b-4078-92e5-923f6cd200f2", "localhost", 6364)
@@ -66,17 +68,35 @@ class BlockchainActor(var blockchain: Blockchain,
     case None => tcpManager ! Tcp.Bind(self, BootstrapPeerInfo.inetSocketAddress)
   }
 
-  def mining: Receive = initial.orElse[Any, Unit] {
+  def idleMining: Receive = {
+    case st: SignedTransaction => {
+      become(mining.orElse(receive))
+      self.!(st)(sender())
+    }
+    case MineEmptyBlockIfIdle => {
+      blockchain = blockchain.mineBlock(Seq(), publicKey)
+      self ! MineEmptyBlockIfIdle
+    }
+  }
+
+  def mining: Receive = {
     case st: SignedTransaction => {
       if (st.verify) {
         blockchain = blockchain.mineBlock(Seq(st), publicKey)
       }
     }
-    case StopMining => unbecome()
-  }.orElse(logOther)
+    case MineEmptyBlockIfIdle => {
+      become(idleMining.orElse(receive))
+      self ! MineEmptyBlockIfIdle
+    }
+  }
 
-  def initial: Receive = {
-    case StartMining => become(mining)
+  def receive: Receive = {
+    case StartMining => {
+      become(mining.orElse(receive))
+      self ! MineEmptyBlockIfIdle
+    }
+    case StopMining => become(receive)
     case block: MinedBlock => {
       // new* assignments to get around scala limitations of multiple assignment
       //println(s"${system.name} $blockchain")
@@ -163,14 +183,9 @@ class BlockchainActor(var blockchain: Blockchain,
       blockchain = deserialize(
         FileUtils.readFileToByteArray(new File(directoryName, "raicoin.chain")))
     }
-  }
-
-
-  def logOther: Receive = {
+    case Balance(publicKey) => sender() ! blockchain.ledger(publicKey)
     case other => {
       println(s"Unhandled Message: ${context.system}: $other")
     }
   }
-
-  def receive = initial.orElse(logOther)
 }
