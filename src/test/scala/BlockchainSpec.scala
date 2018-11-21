@@ -54,12 +54,6 @@ class BlockchainSpec extends FunSuite {
     }
   }
 
-  test("every block must have at least 1 transaction") {
-    assertThrows[IllegalTransactions] {
-      rootOnly.mineBlock(Seq(), vecnaPublicKey, Seq(vecnaPublicKey))
-    }
-  }
-
   test("hash of mined blocks begin with 0's according to difficulty") {
     assert(length4chain.tail.map(_.hash).forall(_.startsWith(Seq.fill(length2chain.difficulty)(0))),
            length4chain.toString)

@@ -12,7 +12,7 @@ class Ledger(private val internalLedger: ListMap[PublicKey, Long] = ListMap.empt
     with Serializable {
 
   //convenience
-  def apply(x: PublicKey): Long              = internalLedger(x)
+  def apply(x: PublicKey): Long              = internalLedger.getOrElse(x, 0)
   def +(kv: (PublicKey, Long)): Ledger       = new Ledger(internalLedger + kv)
   def contains(pk: PublicKey): Boolean = internalLedger.contains(pk)
   //from Iterable
@@ -42,7 +42,7 @@ class Ledger(private val internalLedger: ListMap[PublicKey, Long] = ListMap.empt
     changeBalance(pk, amount, _ + _)
   private def changeBalance(pk: PublicKey, amount: Long, op: (Long, Long) => Long): Ledger = {
     require(amount > 0)
-    val newBalance = op(internalLedger(pk), amount)
+    val newBalance = op(this(pk), amount)
     customRequire(newBalance >= 0, new IllegalTransactions(s"$pk would have $newBalance"))
     this + (pk -> newBalance)
   }

@@ -80,8 +80,6 @@ class Blockchain(blocksByHash: Map[String, BlockWithParent] = {
   def mineBlock(signedTransactions: Seq[SignedTransaction],
                 miner: PublicKey,
                 newPublicKeys: Seq[PublicKey] = Seq.empty): Blockchain = {
-    customRequire(signedTransactions.nonEmpty,
-                  new IllegalTransactions("No transactions to put in block."))
     append(
       new MinedBlock(Hex.encodeHexString(tip.block.hash),
                      ledger,
