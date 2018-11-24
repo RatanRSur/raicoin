@@ -142,7 +142,7 @@ class BlockchainActorSpec extends FunSuiteLike {
     p.expectNoMessage(1.seconds)
     blockchainActor ! validBlock
     blockchainActor ! Request(2)
-    p.receiveN(1)
+    p.receiveOne(500.millis)
     system.terminate()
   }
 
@@ -156,10 +156,10 @@ class BlockchainActorSpec extends FunSuiteLike {
     blockchainActor ! StartMining
     retriesOnTimeout(1) {
       blockchainActor ! Request(1)
-      p.receiveN(1)
+      p.receiveOne(500.millis)
     }
     blockchainActor ! Balance(tiamatPublicKey)
-    val accountBalance = p.receiveN(1).head.asInstanceOf[Long]
+    val accountBalance = p.receiveOne(500.millis).asInstanceOf[Long]
     assert(accountBalance > 0)
     system.terminate()
   }
