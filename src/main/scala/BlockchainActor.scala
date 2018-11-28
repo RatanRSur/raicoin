@@ -31,11 +31,13 @@ case object PeerInfo {
 case object GetPeerInfo
 case object Disconnect
 case class Save(directoryName: String)
+case class Saved(fileName: String)
 case class Load(directoryName: String)
 case class Balance(publicKey: PublicKey)
 case object StartMining
 case object StopMining
 case object MineEmptyBlockIfIdle
+case object Height
 
 object BlockchainActor {
   val BootstrapPeerInfo = PeerInfo("55f119f3-c33b-4078-92e5-923f6cd200f2", "localhost", 6364)
@@ -174,16 +176,18 @@ class BlockchainActor(var blockchain: Blockchain,
       }
     }
     case Save(directoryName) => {
-      import sys.process._
+      val chainFile = new File(directoryName, "raicoin.chain")
       FileUtils.writeByteArrayToFile(
-        new File(directoryName, "raicoin.chain"),
+        chainFile,
         serialize(blockchain))
+      sender() ! Saved(chainFile.getName)
     }
     case Load(directoryName) => {
       blockchain = deserialize(
         FileUtils.readFileToByteArray(new File(directoryName, "raicoin.chain")))
     }
     case Balance(publicKey) => sender() ! blockchain.ledger(publicKey)
+    case Height => sender() ! blockchain.height
     case other => {
       println(s"Unhandled Message: ${context.system}: $other")
     }

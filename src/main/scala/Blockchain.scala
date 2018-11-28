@@ -6,33 +6,28 @@ import Exceptions._
 import org.apache.commons.codec.binary.Hex
 import scorex.crypto.signatures._
 
-class BlockWithParent(val block: Block, val parent: Option[BlockWithParent]) extends Serializable {
-  val index: Int = parent.map(_.index + 1).getOrElse(0)
-}
-
-class Blockchain(blocksByHash: Map[String, BlockWithParent] = {
-  Map((Hex.encodeHexString(EmptyRootBlock.hash) -> new BlockWithParent(EmptyRootBlock, None)))
-}, tips: Seq[BlockWithParent] = Seq(new BlockWithParent(EmptyRootBlock, None)))
+class Blockchain(blocksByHash: Map[String, Block] = Map((Hex.encodeHexString(EmptyRootBlock.hash) ->
+                                                         EmptyRootBlock)),
+                 tips: Seq[Block]                 = Seq(EmptyRootBlock))
     extends Iterable[Block] with Serializable {
 
   val tip             = tips.head
   val difficulty      = 1
   val height          = tips.map(_.index).max + 1
   def apply(idx: Int) = iterator.drop(idx).next()
-  val ledger          = tip.block.ledger
+  val ledger          = tip.ledger
 
   def append(minedBlock: MinedBlock): Blockchain = {
     val parentBlock = blocksByHash.get(minedBlock.parentHash)
     if (parentBlock.isDefined) {
-      val wrappedBlock        = new BlockWithParent(minedBlock, parentBlock)
-      val updatedBlocksByHash = blocksByHash + (Hex.encodeHexString(minedBlock.hash) -> wrappedBlock)
+      val updatedBlocksByHash = blocksByHash + (Hex.encodeHexString(minedBlock.hash) -> minedBlock)
       val updatedTips = {
         val replaceIndex =
-          tips.indexWhere(x => Hex.encodeHexString(x.block.hash) == minedBlock.parentHash)
+          tips.indexWhere(x => Hex.encodeHexString(x.hash) == minedBlock.parentHash)
         if (replaceIndex == -1) {
-          tips :+ wrappedBlock
+          tips :+ minedBlock
         } else {
-          tips.patch(replaceIndex, Seq(wrappedBlock), 1)
+          tips.patch(replaceIndex, Seq(minedBlock), 1)
         }
       }
 
@@ -65,10 +60,10 @@ class Blockchain(blocksByHash: Map[String, BlockWithParent] = {
       var rootUnread = true
       def hasNext    = rootUnread
       def next() = {
-        val ret = current.block
-        current = current.parent match {
-          case Some(mb) => mb
-          case None => {
+        val ret = current
+        current = current match {
+          case mb: MinedBlock => blocksByHash(mb.parentHash)
+          case rb: RootBlock => {
             rootUnread = false
             current
           }
@@ -81,7 +76,8 @@ class Blockchain(blocksByHash: Map[String, BlockWithParent] = {
                 miner: PublicKey,
                 newPublicKeys: Seq[PublicKey] = Seq.empty): Blockchain = {
     append(
-      new MinedBlock(Hex.encodeHexString(tip.block.hash),
+      new MinedBlock(Hex.encodeHexString(tip.hash),
+                     tip.index,
                      ledger,
                      signedTransactions,
                      miner,
