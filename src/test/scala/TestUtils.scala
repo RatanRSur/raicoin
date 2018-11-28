@@ -22,7 +22,7 @@ object TestUtils {
       tx.sign(keyToSignWith)
     }
 
-  val rootOnly = new Blockchain()
+  val rootOnly = new Blockchain(difficulty = 1)
   val length2chain =
     rootOnly.mineBlock(Seq(testTransactions(0)), vecnaPublicKey)
   val length3chain = length2chain.mineBlock(Seq(testTransactions(1)), tiamatPublicKey)

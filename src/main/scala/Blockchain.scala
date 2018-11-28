@@ -8,11 +8,11 @@ import scorex.crypto.signatures._
 
 class Blockchain(blocksByHash: Map[String, Block] = Map((Hex.encodeHexString(EmptyRootBlock.hash) ->
                                                          EmptyRootBlock)),
-                 tips: Seq[Block]                 = Seq(EmptyRootBlock))
+                 tips: Seq[Block]                 = Seq(EmptyRootBlock),
+                 val difficulty: Int              = 2)
     extends Iterable[Block] with Serializable {
 
   val tip             = tips.head
-  val difficulty      = 1
   val height          = tips.map(_.index).max + 1
   def apply(idx: Int) = iterator.drop(idx).next()
   val ledger          = tip.ledger
@@ -31,7 +31,7 @@ class Blockchain(blocksByHash: Map[String, Block] = Map((Hex.encodeHexString(Emp
         }
       }
 
-      new Blockchain(updatedBlocksByHash, updatedTips)
+      new Blockchain(updatedBlocksByHash, updatedTips, difficulty)
     } else {
       this
     }
