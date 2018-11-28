@@ -86,6 +86,6 @@ class Blockchain(blocksByHash: Map[String, Block] = Map((Hex.encodeHexString(Emp
   }
 
   override val toString: String =
-    s"${getClass.getName} main line:\n  ${iterator.mkString("\n  ")})"
+    s"${getClass.getName} main line:\n  ${iterator.take(5).mkString("\n  ")})..."
 
 }
