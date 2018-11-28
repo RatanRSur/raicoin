@@ -25,7 +25,7 @@ class BlockchainActorSpec extends FunSuiteLike {
     val blockchainActor        = system.actorOf(Props(new BlockchainActor(length2chain, tiamatPublicKey)))
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
-    blockchainActor ! length3chain.tip.block
+    blockchainActor ! length3chain.tip
     p.expectNoMessage(timeout)
     length3chain.zipWithIndex.foreach {
       case (block, i) => {
@@ -44,7 +44,7 @@ class BlockchainActorSpec extends FunSuiteLike {
     val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain, tiamatPublicKey)))
 
     blockchainActor ! Request(1)
-    p.expectMsg(tcpWritten(length2chain.tip.block))
+    p.expectMsg(tcpWritten(length2chain.tip))
     system.terminate()
   }
 
@@ -60,9 +60,9 @@ class BlockchainActorSpec extends FunSuiteLike {
       .mineBlock(Seq(testTransactions(1)), tiamatPublicKey)
       .mineBlock(Seq(testTransactions(2)), tiamatPublicKey)
 
-    blockchainActor ! chainA.tip.block
+    blockchainActor ! chainA.tip
     blockchainActor ! Request(2)
-    p.expectMsg(tcpWritten(chainA.tip.block))
+    p.expectMsg(tcpWritten(chainA.tip))
     blockchainActor ! chainB(2)
     blockchainActor ! chainB(3)
     blockchainActor ! Request(2)
@@ -132,10 +132,10 @@ class BlockchainActorSpec extends FunSuiteLike {
     val transaction = Transaction(tiamatPublicKey, vecnaPublicKey, 1)
     val invalidTransaction = transaction.sign(vecnaPrivateKey)
     val invalidBlock =
-      length2chain.mineBlock(Seq(invalidTransaction), vecnaPublicKey).tip.block
+      length2chain.mineBlock(Seq(invalidTransaction), vecnaPublicKey).tip
     val validTransaction = transaction.sign(tiamatPrivateKey)
     val validBlock =
-      length2chain.mineBlock(Seq(validTransaction), vecnaPublicKey).tip.block
+      length2chain.mineBlock(Seq(validTransaction), vecnaPublicKey).tip
 
     blockchainActor ! invalidBlock
     blockchainActor ! Request(2)
@@ -178,7 +178,7 @@ class BlockchainActorSpec extends FunSuiteLike {
       blockchainActor ! Request(3)
       p.expectNoMessage(100.millis)
       length4chainActor ! Save(saveDirPathName)
-      p.expectNoMessage(100.millis)
+      p.expectMsg(Saved(savePath.toFile.getName))
       blockchainActor ! Load(saveDirPathName)
       blockchainActor ! Request(3)
       p.expectMsg(tcpWritten(length4chain(3)))
@@ -188,5 +188,32 @@ class BlockchainActorSpec extends FunSuiteLike {
     }
   }
 
+  test("can save \"big\" blockchain") {
+    implicit val system        = ActorSystem()
+    val p                      = TestProbe("p")(system)
+    implicit val defaultSender = p.testActor
 
+    val blockchainActor = system.actorOf(Props(new BlockchainActor(rootOnly, tiamatPublicKey)))
+
+    val savePath = Paths.get("raicoin.chain")
+    val saveDirPathName = savePath.toAbsolutePath.getParent.toString
+      blockchainActor ! StartMining
+      def loopUntilBig(): Unit = {
+        blockchainActor ! Height
+        if (p.receiveOne(100.millis).asInstanceOf[Int] > 1000) ()
+        else {
+          Thread.sleep(100)
+          loopUntilBig()
+        }
+      }
+      loopUntilBig()
+      blockchainActor ! StopMining
+    try {
+      blockchainActor ! Save(saveDirPathName)
+      p.expectMsg(Saved(savePath.toFile.getName))
+    } finally {
+      Await.result(system.terminate(), Duration.Inf)
+      Files.deleteIfExists(savePath)
+    }
+  }
 }

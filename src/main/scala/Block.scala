@@ -5,11 +5,13 @@ import org.apache.commons.codec.binary.Hex
 import scorex.crypto.signatures._
 
 abstract class Block extends SHAHashable with Serializable {
+  val index: Int
   val ledger: Ledger
 }
 
 case class RootBlock(val ledger: Ledger = new Ledger()) extends Block {
   val hashDependencies = Seq(ledger.hash)
+  val index = 0
   override val toString: String =
     s"${getClass.getName}(hash: ${Hex.encodeHexString(hash).take(6)}...)"
 }
@@ -17,6 +19,7 @@ case class RootBlock(val ledger: Ledger = new Ledger()) extends Block {
 object EmptyRootBlock extends RootBlock()
 
 case class MinedBlock(val parentHash: String,
+                      parentIndex: Int,
                       parentLedger: Ledger,
                       signedTransactions: Seq[SignedTransaction],
                       miner: PublicKey,
@@ -25,6 +28,7 @@ case class MinedBlock(val parentHash: String,
                       checkNonce: Option[Int] = None)
     extends Block {
 
+  val index = parentIndex + 1
   val transactions = signedTransactions.map(_.transaction)
 
   val ledger = parentLedger
