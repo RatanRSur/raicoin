@@ -25,12 +25,6 @@ class BlockchainSpec extends FunSuite {
     assert(length2chain.ledger.size === 2)
   }
 
-  test("can't add user that already exists") {
-    assertThrows[PublicKeyAlreadyExists] {
-      length2chain.mineBlock(Seq(testTransactions(0)), vecnaPublicKey, Seq(vecnaPublicKey))
-    }
-  }
-
   test("add block onto blockchain") {
     assert(length2chain.height === 2)
     assert(length2chain.ledger(vecnaPublicKey) === 0)
@@ -44,7 +38,7 @@ class BlockchainSpec extends FunSuite {
       tx.sign(keyToSignWith)
     }
     assertThrows[IllegalTransactions] {
-      rootOnly.mineBlock(transactions, vecnaPublicKey, Seq(vecnaPublicKey, tiamatPublicKey))
+      rootOnly.mineBlock(transactions, vecnaPublicKey)
     }
   }
 
