@@ -73,15 +73,13 @@ class Blockchain(blocksByHash: Map[String, Block] = Map((Hex.encodeHexString(Emp
     }.toSeq.reverseIterator
 
   def mineBlock(signedTransactions: Seq[SignedTransaction],
-                miner: PublicKey,
-                newPublicKeys: Seq[PublicKey] = Seq.empty): Blockchain = {
+                miner: PublicKey): Blockchain = {
     append(
       new MinedBlock(Hex.encodeHexString(tip.hash),
                      tip.index,
                      ledger,
                      signedTransactions,
                      miner,
-                     newPublicKeys,
                      difficulty))
   }
 

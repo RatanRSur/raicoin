@@ -24,7 +24,7 @@ object TestUtils {
 
   val rootOnly = new Blockchain()
   val length2chain =
-    rootOnly.mineBlock(Seq(testTransactions(0)), vecnaPublicKey, Seq(vecnaPublicKey, tiamatPublicKey))
+    rootOnly.mineBlock(Seq(testTransactions(0)), vecnaPublicKey)
   val length3chain = length2chain.mineBlock(Seq(testTransactions(1)), tiamatPublicKey)
   val length4chain = length3chain.mineBlock(Seq(testTransactions(2)), tiamatPublicKey)
 

@@ -19,10 +19,6 @@ class Ledger(private val internalLedger: ListMap[PublicKey, Long] = ListMap.empt
   def iterator = internalLedger.iterator
 
   def rewardMiner(miner: PublicKey): Ledger = increase(miner, 1)
-  def addPublicKeys(userNames: Seq[PublicKey]): Ledger = (this /: userNames) { (ledger, pk) =>
-    customRequire(!ledger.contains(pk), new PublicKeyAlreadyExists(pk))
-    ledger + (pk -> 0)
-  }
 
   def applyTransactions(transactions: Seq[Transaction]): Try[Ledger] = {
     val ret = (this /: transactions) { (ledg, transaction) =>
