@@ -83,7 +83,9 @@ class Blockchain(blocksByHash: Map[String, Block] = Map((Hex.encodeHexString(Emp
                      difficulty).mine)
   }
 
-  override val toString: String =
-    s"${getClass.getName} main line:\n  ${iterator.take(5).mkString("\n  ")})..."
+  override val toString: String = {
+    val iter = iterator
+    s"${getClass.getName} main line:\n  ${iter.take(5).mkString("\n  ")}${if (iter.hasNext) "\n  ..." else ""}"
+  }
 
 }
