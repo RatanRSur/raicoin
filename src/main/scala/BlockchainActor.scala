@@ -12,6 +12,7 @@ import Serializer._
 import org.apache.commons.codec.binary.Hex
 import java.util.UUID._
 import java.io.File
+import java.nio.file.Paths
 import scorex.crypto.signatures._
 import org.apache.commons.lang3.SerializationUtils.{serialize, deserialize}
 import org.apache.commons.io.FileUtils
@@ -41,6 +42,12 @@ case object Height
 
 object BlockchainActor {
   val BootstrapPeerInfo = PeerInfo("55f119f3-c33b-4078-92e5-923f6cd200f2", "localhost", 6364)
+  def fromSavedBlockchain(pathToBlockchain: String, publicKey: PublicKey, startingPeer: Option[PeerInfo] = Some(BlockchainActor.BootstrapPeerInfo)): BlockchainActor = {
+    new BlockchainActor(deserialize(
+      FileUtils.readFileToByteArray(Paths.get(pathToBlockchain).toFile)),
+      publicKey,
+      startingPeer)
+  }
 }
 
 class BlockchainActor(var blockchain: Blockchain,

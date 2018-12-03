@@ -164,7 +164,7 @@ class BlockchainActorSpec extends FunSuiteLike {
     system.terminate()
   }
 
-  test("can save and load blockchain") {
+  test("can save and load blockchain with messages") {
     implicit val system        = ActorSystem()
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
@@ -181,6 +181,27 @@ class BlockchainActorSpec extends FunSuiteLike {
       p.expectMsg(Saved(savePath.toFile.getName))
       blockchainActor ! Load(saveDirPathName)
       blockchainActor ! Request(3)
+      p.expectMsg(tcpWritten(length4chain(3)))
+      Await.result(system.terminate(), Duration.Inf)
+    } finally {
+      Files.deleteIfExists(savePath)
+    }
+  }
+
+  test("can load blockchain using actor constructor") {
+    implicit val system        = ActorSystem()
+    val p                      = TestProbe("p")(system)
+    implicit val defaultSender = p.testActor
+
+    val savingActor = system.actorOf(Props(new BlockchainActor(length4chain, tiamatPublicKey)))
+
+    val savePath = Paths.get("raicoin.chain")
+    val saveDirPathName = savePath.toAbsolutePath.getParent.toString
+    try {
+      savingActor ! Save(saveDirPathName)
+      p.expectMsg(Saved(savePath.toFile.getName))
+      val loadingActor = system.actorOf(Props(BlockchainActor.fromSavedBlockchain(savePath.toFile.getName, tiamatPublicKey)))
+      loadingActor ! Request(3)
       p.expectMsg(tcpWritten(length4chain(3)))
       Await.result(system.terminate(), Duration.Inf)
     } finally {
