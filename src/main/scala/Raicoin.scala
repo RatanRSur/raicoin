@@ -7,6 +7,7 @@ import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import java.io.File
 import java.nio.file.Paths
+import akka.actor._
 
 object Raicoin {
   val keyBasename = "raicoin"
@@ -31,6 +32,17 @@ object Raicoin {
     } else {
       print(s"Directory where $privateKeyName and $publicKeyName are saved: ")
       loadPrivateAndPublicKey(readDirectory())
+    }
+
+    val system  = ActorSystem()
+    println("[L]oad existing chain, [R]etrieve from network?")
+    val chainLoadingNeeded = "Ll".contains(readCharOneOf("LlRr"))
+    val blockChainActor = if (chainLoadingNeeded) {
+      print("Directory where raicoin.chain is saved: ")
+      system.actorOf(
+        Props(BlockchainActor.fromSavedBlockchain(readDirectory(), publicKey)))
+    } else {
+      system.actorOf(Props(new BlockchainActor(new Blockchain(), publicKey)))
     }
 
   }
