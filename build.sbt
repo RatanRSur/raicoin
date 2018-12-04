@@ -14,7 +14,7 @@ lazy val root = (project in file(".")).settings(
     "org.apache.commons" % "commons-lang3" % "3.8.1",
     "commons-io" % "commons-io" % "2.6"
   ),
-  scalacOptions += "-feature",
+  scalacOptions ++= Seq("-feature", "-deprecation"),
   parallelExecution in Test := false,
   fork := true,
   testOptions in Test += Tests.Argument("-oD")
