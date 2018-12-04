@@ -22,7 +22,8 @@ case object Disconnect
 case class Save(directoryName: String)
 case class Saved(fileName: String)
 case class Load(directoryName: String)
-case class Balance(publicKey: PublicKey)
+case class GetBalance(publicKey: PublicKey)
+case class Balance(publicKey: PublicKey, balance: Long)
 case object StartMining
 case object StopMining
 case object MineEmptyBlockIfIdle
@@ -201,8 +202,8 @@ class BlockchainActor(var blockchain: Blockchain,
       blockchain = deserialize(
         FileUtils.readFileToByteArray(new File(directoryName, "raicoin.chain")))
     }
-    case Balance(publicKey) => sender() ! blockchain.ledger(publicKey)
-    case Height             => sender() ! blockchain.height
+    case GetBalance(publicKey) => sender() ! Balance(publicKey, blockchain.ledger(publicKey))
+    case Height                => sender() ! blockchain.height
     case other => {
       //println(s"Unhandled Message: ${context.system}: $other")
     }

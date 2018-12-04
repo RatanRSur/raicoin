@@ -151,8 +151,8 @@ class BlockchainActorSpec extends FunSuiteLike {
             tcpUnwrap[MinedBlock](msg.asInstanceOf[Tcp.Write]).transactions
               .contains(testTransactions(1).transaction))
           .size === 1)
-      blockchainActor ! Balance(vecnaPublicKey)
-      p.expectMsg(2)
+      blockchainActor ! GetBalance(vecnaPublicKey)
+      p.expectMsg(Balance(vecnaPublicKey, 2))
     } finally {
       system.terminate()
     }
@@ -224,8 +224,8 @@ class BlockchainActorSpec extends FunSuiteLike {
         blockchainActor ! Request(1)
         p.receiveOne(500.millis)
       }
-      blockchainActor ! Balance(tiamatPublicKey)
-      val accountBalance = p.receiveOne(500.millis).asInstanceOf[Long]
+      blockchainActor ! GetBalance(tiamatPublicKey)
+      val accountBalance = p.expectMsgType[Balance].balance
       assert(accountBalance > 0)
     } finally {
       system.terminate()

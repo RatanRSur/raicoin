@@ -6,7 +6,6 @@ import scorex.crypto.signatures._
 import org.apache.commons.codec.binary.Hex._
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
-import org.apache.commons.codec.binary.Hex._
 import java.io.File
 import java.nio.file.Paths
 import akka.actor._
@@ -45,7 +44,7 @@ object Raicoin {
     val system  = ActorSystem()
     println("[L]oad existing chain, [R]etrieve from network?")
     val chainLoadingNeeded = "Ll".contains(readCharOneOf("LlRr"))
-    val blockchainActor = if (chainLoadingNeeded) {
+    val blockchainActorRef = if (chainLoadingNeeded) {
       print("Directory where raicoin.chain is saved: ")
       val directory = readDirectory()
       system.actorOf(
@@ -54,31 +53,7 @@ object Raicoin {
       system.actorOf(Props(new BlockchainActor(new Blockchain(), publicKey)))
     }
 
-    import scala.concurrent.ExecutionContext.Implicits.global
-    while (true) {
-      val command = Option(readLine("> ")).getOrElse("exit").trim
-      command match {
-        case "save" => blockchainActor ! Save(".")
-        case "balance" => {
-          val balance = Await.result(blockchainActor.ask(Balance(publicKey))(1.seconds), Duration.Inf)
-          println(s"${encodeHexString(publicKey)}: $balance")
-        }
-        case "mining start" => blockchainActor ! StartMining
-        case "mining stop" => blockchainActor ! StopMining
-        case transfer if transfer.startsWith("send") => {
-          val tokens = transfer.split(" ")
-          val recipient = decodeHex(tokens(1))
-          val amount = tokens(2).toInt
-          blockchainActor ! Transaction(publicKey,
-                                        PublicKey(recipient),
-                                        amount)
-                              .sign(privateKey)
-        }
-        case "" => ()
-        case "exit" => sys.exit(0)
-        case _ => println("Invalid command")
-      }
-    }
+    system.actorOf(Props(new PromptActor(blockchainActorRef, publicKey, privateKey)))
   }
 
   def readDirectory(): String = {
