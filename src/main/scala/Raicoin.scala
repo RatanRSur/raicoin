@@ -58,7 +58,10 @@ object Raicoin {
       val command = Option(readLine("> ")).getOrElse("exit").trim
       command match {
         case "save" => blockchainActor ! Save(".")
-        case "balance" => println(Await.result(blockchainActor.ask(Balance(publicKey))(1.seconds), Duration.Inf))
+        case "balance" => {
+          val balance = Await.result(blockchainActor.ask(Balance(publicKey))(1.seconds), Duration.Inf)
+          println(s"${encodeHexString(publicKey)}: $balance")
+        }
         case "mining start" => blockchainActor ! StartMining
         case "mining stop" => blockchainActor ! StopMining
         case "" => ()
