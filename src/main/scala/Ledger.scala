@@ -5,27 +5,28 @@ import scala.collection.immutable.ListMap
 import scala.collection.SortedSet
 import scala.util.{Try, Success, Failure}
 import scorex.crypto.signatures._
+import org.apache.commons.codec.binary.Hex._
 import Exceptions._
 
-class Ledger(private val internalLedger: ListMap[PublicKey, Long] = ListMap.empty)
+class Ledger(private val internalLedger: ListMap[String, Long] = ListMap.empty)
     extends Iterable[(PublicKey, Long)]
     with SHAHashable
     with Serializable {
 
   //convenience
-  def apply(x: PublicKey): Long              = internalLedger.getOrElse(x, 0)
-  def +(kv: (PublicKey, Long)): Ledger       = new Ledger(internalLedger + kv)
-  def contains(pk: PublicKey): Boolean = internalLedger.contains(pk)
+  def apply(x: PublicKey): Long = internalLedger.getOrElse(encodeHexString(x), 0)
+  def +(kv: (PublicKey, Long)): Ledger =
+    new Ledger(internalLedger + (encodeHexString(kv._1) -> kv._2))
+  def contains(pk: PublicKey): Boolean = internalLedger.contains(encodeHexString(pk))
   //from Iterable
-  def iterator = internalLedger.iterator
+  def iterator = internalLedger.iterator.map { case (pkString, bal) => (PublicKey(decodeHex(pkString)), bal) }
 
   def rewardMiner(miner: PublicKey): Ledger = increase(miner, 1)
 
-  def applyTransactions(transactions: Seq[Transaction]): Try[Ledger] = {
-    val ret = (this /: transactions) { (ledg, transaction) =>
+  def applyTransactions(transactions: Seq[Transaction]): Try[Ledger] = Try {
+    (this /: transactions) { (ledg, transaction) =>
       ledg.transfer(transaction.sender, transaction.recipient, transaction.amount)
     }
-    Success(ret)
   }
 
   import HashImplicits._

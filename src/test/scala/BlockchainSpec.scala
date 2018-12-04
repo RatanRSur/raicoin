@@ -5,6 +5,7 @@ import scala.util.Random
 import java.security.MessageDigest
 import Exceptions._
 import TestUtils._
+import scorex.crypto.signatures._
 
 class BlockchainSpec extends FunSuite {
 
@@ -51,6 +52,11 @@ class BlockchainSpec extends FunSuite {
   test("hash of mined blocks begin with 0's according to difficulty") {
     assert(length4chain.tail.map(_.hash).forall(_.startsWith(Seq.fill(length2chain.difficulty)(0))),
            length4chain.toString)
+  }
+
+  test("ledger access determined by value of public key, not object") {
+    assert(length4chain.ledger(tiamatPublicKey) ===
+           length4chain.ledger(PublicKey(tiamatPublicKey.clone())))
   }
 
   //test("blockchain hash chain is solid all the way back") {
