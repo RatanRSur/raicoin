@@ -17,5 +17,8 @@ lazy val root = (project in file(".")).settings(
   scalacOptions ++= Seq("-feature", "-deprecation"),
   parallelExecution in Test := false,
   fork := true,
+  connectInput in run := true,
+  trapExit := false,
+  outputStrategy := Some(StdoutOutput),
   testOptions in Test += Tests.Argument("-oD")
 )
