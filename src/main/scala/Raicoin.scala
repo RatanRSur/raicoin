@@ -6,6 +6,7 @@ import scorex.crypto.signatures._
 import org.apache.commons.codec.binary.Hex._
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
+import org.apache.commons.codec.binary.Hex._
 import java.io.File
 import java.nio.file.Paths
 import akka.actor._
@@ -64,6 +65,15 @@ object Raicoin {
         }
         case "mining start" => blockchainActor ! StartMining
         case "mining stop" => blockchainActor ! StopMining
+        case transfer if transfer.startsWith("send") => {
+          val tokens = transfer.split(" ")
+          val recipient = decodeHex(tokens(1))
+          val amount = tokens(2).toInt
+          blockchainActor ! Transaction(publicKey,
+                                        PublicKey(recipient),
+                                        amount)
+                              .sign(privateKey)
+        }
         case "" => ()
         case "exit" => sys.exit(0)
         case _ => println("Invalid command")
