@@ -3,6 +3,7 @@ package raicoin
 import akka.actor._
 import scorex.crypto.signatures._
 import org.apache.commons.codec.binary.Hex._
+import scala.io.StdIn._
 
 class PromptActor(blockchainActorRef: ActorRef, publicKey: PublicKey, privateKey: PrivateKey)
   extends Actor {
@@ -12,7 +13,7 @@ class PromptActor(blockchainActorRef: ActorRef, publicKey: PublicKey, privateKey
   def prompt(): Unit = self ! Option(readLine("> ")).getOrElse("exit").trim
 
   prompt()
-  def receive = PartialFunction[Any, Unit] {
+  def receive = {
     case "save" => {
       blockchainActorRef ! Save(".")
       become(awaitingResponse)
