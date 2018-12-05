@@ -1,10 +1,14 @@
 package raicoin
 
+import scala.concurrent.duration._
+
 import akka.io.Tcp
 import Serializer._
 
 import scorex.crypto._
 import scorex.crypto.signatures._
+
+import akka.testkit._
 
 
 object TestUtils {
@@ -42,6 +46,13 @@ object TestUtils {
       } else throw ae
     }
   }
+
+  def receiveNonTcpMessage(probe: TestProbe, max: Duration) = {
+    val msg = probe.receiveOne(max)
+    if (msg.isInstanceOf[Tcp.Event] || msg.isInstanceOf[Tcp.Write]) probe.receiveOne(max)
+    else msg
+  }
+
 
   def tcpUnwrap[T](supposedlyWrite: Any): T = {
     fromByteString(supposedlyWrite.asInstanceOf[Tcp.Write].data).asInstanceOf[T]

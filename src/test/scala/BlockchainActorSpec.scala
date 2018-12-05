@@ -159,7 +159,7 @@ class BlockchainActorSpec extends FunSuiteLike {
       p.receiveOne(500.millis)
     }
     blockchainActor ! Balance(tiamatPublicKey)
-    val accountBalance = p.receiveOne(500.millis).asInstanceOf[Long]
+    val accountBalance = receiveNonTcpMessage(p, 750.millis).asInstanceOf[Long]
     assert(accountBalance > 0)
     system.terminate()
   }
