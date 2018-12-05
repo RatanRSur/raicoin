@@ -154,7 +154,7 @@ class BlockchainActorSpec extends FunSuiteLike {
     val blockchainActor = system.actorOf(Props(new BlockchainActor(new Blockchain(), tiamatPublicKey)))
 
     blockchainActor ! StartMining
-    retriesOnTimeout(1) {
+    retriesOnTimeout(10) {
       blockchainActor ! Request(1)
       p.receiveOne(500.millis)
     }
