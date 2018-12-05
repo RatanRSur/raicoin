@@ -1,6 +1,7 @@
 package raicoin
 
 import scala.concurrent.duration._
+import scala.util.Try
 
 import akka.io.Tcp
 import Serializer._
@@ -47,10 +48,16 @@ object TestUtils {
     }
   }
 
+  def receiveFirstSatisfying(probe: TestProbe, maxBetweenMessages: Duration, test: (Any) => Boolean): Any = {
+    val msg = probe.receiveOne(maxBetweenMessages)
+    if (test(msg)) msg
+    else receiveFirstSatisfying(probe, maxBetweenMessages, test)
+  }
+
   def receiveNonTcpMessage(probe: TestProbe, max: Duration) = {
-    val msg = probe.receiveOne(max)
-    if (msg.isInstanceOf[Tcp.Event] || msg.isInstanceOf[Tcp.Write]) probe.receiveOne(max)
-    else msg
+    receiveFirstSatisfying(probe, max, {
+      case msg => !(msg.isInstanceOf[Tcp.Event] || msg.isInstanceOf[Tcp.Write])
+    })
   }
 
 

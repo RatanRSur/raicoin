@@ -98,7 +98,9 @@ class BlockchainActorSpec extends FunSuiteLike {
     blockchainActor ! StartMining
     blockchainActor ! signedTransaction
     blockchainActor ! Request(2)
-    assert(tcpUnwrap[MinedBlock](p.receiveOne(1.seconds)).transactions.contains(transaction))
+    receiveFirstSatisfying(p, 1.seconds, {
+      case msg => tcpUnwrap[MinedBlock](msg).transactions.contains(transaction)
+    })
     blockchainActor ! StopMining
     blockchainActor ! signedTransaction
     blockchainActor ! Request(3)
