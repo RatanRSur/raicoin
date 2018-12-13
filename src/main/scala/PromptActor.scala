@@ -4,6 +4,7 @@ import akka.actor._
 import scorex.crypto.signatures._
 import org.apache.commons.codec.binary.Hex._
 import scala.io.StdIn._
+import scala.util.Try
 
 class PromptActor(blockchainActorRef: ActorRef, publicKey: PublicKey, privateKey: PrivateKey)
   extends Actor {
@@ -19,8 +20,10 @@ class PromptActor(blockchainActorRef: ActorRef, publicKey: PublicKey, privateKey
       become(awaitingResponse)
     }
 
-    case "balance" => {
-      blockchainActorRef ! GetBalance(publicKey)
+    case balance: String if balance.startsWith("balance") => {
+      val tokens = balance.split(" ")
+      val account = Try(PublicKey(decodeHex(tokens(1)))).getOrElse(publicKey)
+      blockchainActorRef ! GetBalance(account)
       become(awaitingResponse)
     }
 
@@ -37,7 +40,9 @@ class PromptActor(blockchainActorRef: ActorRef, publicKey: PublicKey, privateKey
       val tokens = transfer.split(" ")
       val recipient = PublicKey(decodeHex(tokens(1)))
       val amount = tokens(2).toInt
+      assert(Transaction(publicKey, recipient, amount).sign(privateKey).verify)
       blockchainActorRef ! Transaction(publicKey, recipient, amount).sign(privateKey)
+      prompt()
     }
     case ""     => prompt()
     case "exit" => sys.exit(0)
@@ -48,8 +53,8 @@ class PromptActor(blockchainActorRef: ActorRef, publicKey: PublicKey, privateKey
   }
 
   def awaitingResponse: Receive = PartialFunction[Any, Unit] {
-    case Balance(publickKey, balance) => {
-      println(s"${encodeHexString(publicKey)}: $balance")
+    case Balance(pubKey, balance) => {
+      println(s"${encodeHexString(pubKey)}: $balance")
     }
     case Saved(x) => {
       println(s"Saved to $x")
