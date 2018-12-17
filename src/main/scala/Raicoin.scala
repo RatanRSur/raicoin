@@ -67,10 +67,10 @@ object Raicoin {
   }
 
   def loadPrivateAndPublicKey(directoryName: String): (PrivateKey, PublicKey) = {
-    (FileUtils.readFileToByteArray(
-       new File(directoryName, privateKeyName)).asInstanceOf[PrivateKey],
-     FileUtils.readFileToByteArray(
-       new File(directoryName, privateKeyName)).asInstanceOf[PublicKey])
+    (PrivateKey(
+      FileUtils.readFileToByteArray(new File(directoryName, privateKeyName))),
+     PublicKey(
+       FileUtils.readFileToByteArray(new File(directoryName, publicKeyName))))
   }
 
   def readCharOneOf(validChars: String): Char = {
