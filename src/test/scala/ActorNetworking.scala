@@ -35,6 +35,33 @@ class ActorNetworking extends FunSuiteLike {
     Seq(systemA, systemB).foreach(system => Await.result(system.terminate(), Duration.Inf))
   }
 
+  test("not mining actor forwards transaction to peers") {
+
+      val systemA = ActorSystem("A")
+      val actorA  = systemA.actorOf(Props(new BlockchainActor(rootOnly, tiamatPublicKey, None)), "A")
+
+      val systemB = ActorSystem("B")
+      val actorB  = systemB.actorOf(Props(new BlockchainActor(rootOnly, tiamatPublicKey)), "B")
+
+      val p                      = TestProbe("p")(systemA)
+      implicit val defaultSender = p.testActor
+
+      Thread.sleep(500)
+      actorA ! StartMining
+      actorB ! testTransactions(1)
+      Thread.sleep(500)
+      actorA ! RequestBlocksSince(1)
+      try {
+        assert(p.receiveWhile(1.seconds, 500.millis) { case msg => msg }
+          .exists(msg => {
+              tcpUnwrap[MinedBlock](msg).transactions.contains(testTransactions(1).transaction)
+        }))
+      } finally {
+        Seq(actorA, actorB).foreach(_ ! Disconnect)
+        Seq(systemA, systemB).foreach(system => Await.result(system.terminate(), Duration.Inf))
+      }
+  }
+
   test("B and C discover each other through A") {
 
       val systemA = ActorSystem("A")

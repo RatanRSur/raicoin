@@ -79,8 +79,10 @@ class BlockchainActor(var blockchain: Blockchain,
 
   def idleMining: Receive = {
     case st: SignedTransaction => {
+      if (st.verify) {
+        blockchain = blockchain.mineBlock(Seq(st), publicKey)
+      }
       become(mining.orElse(receive))
-      self.!(st)(sender())
     }
     case MineEmptyBlockIfIdle => {
       blockchain = blockchain.mineBlock(Seq(), publicKey)
@@ -106,6 +108,9 @@ class BlockchainActor(var blockchain: Blockchain,
       self ! MineEmptyBlockIfIdle
     }
     case StopMining => become(receive)
+    case st: SignedTransaction => {
+      connectedPeers.keys.foreach(_ ! Tcp.Write(toByteString(st)))
+    }
     case block: MinedBlock => {
       // new* assignments to get around scala limitations of multiple assignment
       //println(s"${system.name} $blockchain")
