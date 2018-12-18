@@ -122,6 +122,25 @@ class BlockchainActorSpec extends FunSuiteLike {
     system.terminate()
   }
 
+  test("does not remine transaction"){
+    implicit val system        = ActorSystem()
+    val p                      = TestProbe("p")(system)
+    implicit val defaultSender = p.testActor
+
+    val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain, tiamatPublicKey)))
+
+    blockchainActor ! StartMining
+    blockchainActor ! testTransactions(1)
+    blockchainActor ! testTransactions(1)
+    blockchainActor ! Transaction(tiamatPublicKey, vecnaPublicKey, 1).sign(tiamatPrivateKey)
+    blockchainActor ! RequestBlocksSince(1)
+    val msgs = p.receiveWhile(1.seconds, 500.millis) { case msg => msg }
+    assert(msgs.filter(msg => tcpUnwrap[MinedBlock](msg).transactions.contains(testTransactions(1).transaction)).size === 1)
+    blockchainActor ! Balance(vecnaPublicKey)
+    p.expectMsg(2)
+    system.terminate()
+  }
+
   test("rejects block with invalid transactions"){
     implicit val system        = ActorSystem()
     val p                      = TestProbe("p")(system)

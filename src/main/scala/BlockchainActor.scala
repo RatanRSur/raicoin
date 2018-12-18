@@ -64,6 +64,7 @@ class BlockchainActor(var blockchain: Blockchain,
   var connectedPeers               = Map[ActorRef, Option[PeerInfo]]()
 
   var orphans = Seq[MinedBlock]()
+  var seenTransactions = Set.empty[Transaction]
 
   var myListeningAddress: Option[InetSocketAddress] = None
 
@@ -77,11 +78,16 @@ class BlockchainActor(var blockchain: Blockchain,
     case None => tcpManager ! Tcp.Bind(self, BootstrapPeerInfo.inetSocketAddress)
   }
 
+  def mineSignedTransaction(st: SignedTransaction) = {
+    if (!seenTransactions.contains(st.transaction) && st.verify) {
+        blockchain = blockchain.mineBlock(Seq(st), publicKey)
+        seenTransactions += st.transaction
+    }
+  }
+
   def idleMining: Receive = {
     case st: SignedTransaction => {
-      if (st.verify) {
-        blockchain = blockchain.mineBlock(Seq(st), publicKey)
-      }
+      mineSignedTransaction(st)
       become(mining.orElse(receive))
     }
     case MineEmptyBlockIfIdle => {
@@ -92,9 +98,7 @@ class BlockchainActor(var blockchain: Blockchain,
 
   def mining: Receive = {
     case st: SignedTransaction => {
-      if (st.verify) {
-        blockchain = blockchain.mineBlock(Seq(st), publicKey)
-      }
+      mineSignedTransaction(st)
     }
     case MineEmptyBlockIfIdle => {
       become(idleMining.orElse(receive))

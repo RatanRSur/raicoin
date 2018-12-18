@@ -20,6 +20,8 @@ case class Transaction(sender: PublicKey, recipient: PublicKey, amount: Int)
     extends SHAHashable {
   customRequire(sender != recipient, new IllegalTransactions("sender cannot also be recipient"))
   import HashImplicits._
+  val ticks = scala.compat.Platform.currentTime
+
   val hash = {
     val sha = MessageDigest.getInstance("SHA-256")
     Seq(sender, recipient, amount.hash).foreach(sha.update)
@@ -27,7 +29,7 @@ case class Transaction(sender: PublicKey, recipient: PublicKey, amount: Int)
   }
   override def equals(that: Any): Boolean = {
     that match {
-      case that: Transaction => sender.deep == that.sender.deep && recipient.deep == that.recipient.deep && amount == that.amount
+      case that: Transaction => ticks == that.ticks && sender.deep == that.sender.deep && recipient.deep == that.recipient.deep && amount == that.amount
       case _ => false
     }
   }
