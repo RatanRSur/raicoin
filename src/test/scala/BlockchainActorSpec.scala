@@ -165,6 +165,29 @@ class BlockchainActorSpec extends FunSuiteLike {
     system.terminate()
   }
 
+  test("rejects block existing transaction"){
+    implicit val system        = ActorSystem()
+    val p                      = TestProbe("p")(system)
+    implicit val defaultSender = p.testActor
+
+    val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain, tiamatPublicKey)))
+
+    val chainWithTransaction = length2chain.mineBlock(Seq(testTransactions(0)), vecnaPublicKey)
+    val chainWithDuplicateTransaction =
+      chainWithTransaction.mineBlock(Seq(testTransactions(0)), vecnaPublicKey)
+
+    val blockWithTransaction = chainWithTransaction.tip
+    val blockWithDuplicateTransaction = chainWithDuplicateTransaction.tip
+
+    blockchainActor ! blockWithTransaction
+    blockchainActor ! blockWithDuplicateTransaction
+    blockchainActor ! Request(2)
+    p.receiveOne(500.millis)
+    blockchainActor ! Request(3)
+    p.expectNoMessage(1.seconds)
+    system.terminate()
+  }
+
   test("mining blockchain should have some value in account by the end"){
     implicit val system        = ActorSystem()
     val p                      = TestProbe("p")(system)

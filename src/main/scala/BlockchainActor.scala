@@ -113,17 +113,22 @@ class BlockchainActor(var blockchain: Blockchain,
     }
     case StopMining => become(receive)
     case st: SignedTransaction => {
-      connectedPeers.keys.foreach(_ ! Tcp.Write(toByteString(st)))
+      if (!seenTransactions.contains(st.transaction)) {
+        connectedPeers.keys.foreach(_ ! Tcp.Write(toByteString(st)))
+      }
     }
     case block: MinedBlock => {
       // new* assignments to get around scala limitations of multiple assignment
       //println(s"${system.name} $blockchain")
-      if (block.signedTransactions.forall(_.verify)) {
+      if (block.signedTransactions.forall { st =>
+          !seenTransactions.contains(st.transaction) &&
+          st.verify
+        }) {
 
         val (newBlockchain, newOrphans) = blockchain.resolveOrphans(orphans :+ block)
         blockchain = newBlockchain
         orphans = newOrphans
-
+        block.transactions.foreach(seenTransactions += _)
       }
       //println(s"${system.name} $blockchain")
     }
