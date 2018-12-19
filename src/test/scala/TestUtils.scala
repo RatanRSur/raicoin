@@ -1,11 +1,8 @@
 package raicoin
 
 import akka.io.Tcp
-import akka.testkit.{ImplicitSender, TestActors, TestKit, TestProbe}
-import Serializer._
-import scala.concurrent.duration._
-
-import scorex.crypto._
+import akka.testkit.TestProbe
+import raicoin.Serializer._
 import scorex.crypto.signatures._
 
 

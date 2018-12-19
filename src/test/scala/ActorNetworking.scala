@@ -1,15 +1,13 @@
 package raicoin
 
 import akka.actor._
+import akka.io.Tcp
 import akka.testkit.TestProbe
 import org.scalatest._
-import java.net.InetSocketAddress
-import scala.concurrent.duration._
+import raicoin.TestUtils._
+
 import scala.concurrent.Await
-import BlockchainActor._
-import Serializer._
-import akka.io.Tcp
-import TestUtils._
+import scala.concurrent.duration._
 
 class ActorNetworking extends FunSuiteLike {
 

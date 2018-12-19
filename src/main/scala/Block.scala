@@ -2,6 +2,7 @@ package raicoin
 
 import java.nio.ByteBuffer
 import java.security.MessageDigest
+
 import org.apache.commons.codec.binary.Hex
 import scorex.crypto.signatures._
 
@@ -73,9 +74,8 @@ case class MinedBlock(val parentHash: String,
     extends Block {
 
   val transactions = signedTransactions.map(_.transaction)
-  import HashImplicits._
-
   import BlockUtils._
+  import HashImplicits._
   val hashDependencies = Seq[SHAHashable](parentHash, ledger, signedTransactions.map(_.transaction))
 
   val hash: Array[Byte] = hashWithNonce(MessageDigest.getInstance("SHA-256"), hashDependencies, nonce)

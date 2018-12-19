@@ -1,11 +1,11 @@
 package raicoin
 
 import org.scalatest._
-import scala.util.Random
-import java.security.MessageDigest
-import Exceptions._
-import TestUtils._
+import raicoin.Exceptions._
+import raicoin.TestUtils._
 import scorex.crypto.signatures._
+
+import scala.util.Random
 
 class BlockchainSpec extends FunSuite {
 

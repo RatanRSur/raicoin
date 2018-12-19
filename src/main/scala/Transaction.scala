@@ -1,12 +1,11 @@
 package raicoin
 
-import Exceptions._
-
 import java.security.MessageDigest
+
 import akka.util.ByteString
-import scorex.crypto._
-import scorex.crypto.signatures._
 import org.apache.commons.lang3.SerializationUtils.serialize
+import raicoin.Exceptions._
+import scorex.crypto.signatures._
 
 case class SignedTransaction(signature: ByteString, transaction: Transaction) {
   def verify: Boolean = Curve25519.verify(

@@ -1,11 +1,10 @@
 package raicoin
 
-import java.security.MessageDigest
 import java.nio.ByteBuffer
+import java.security.MessageDigest
+
 import scala.collection.SortedSet
 import scala.collection.immutable.ListMap
-
-import scorex.crypto.signatures._
 
 object HashImplicits extends Serializable {
 
@@ -58,6 +57,5 @@ object HashImplicits extends Serializable {
 }
 
 trait SHAHashable {
-  import HashImplicits._
   val hash: Array[Byte]
 }

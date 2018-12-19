@@ -1,20 +1,15 @@
 package raicoin
 
-import org.scalatest._
-import akka.actor._
-import akka.testkit.{ImplicitSender, TestActors, TestKit, TestProbe}
-import akka.util.Timeout
-import akka.io.Tcp
-import akka.io.IO
-
-import scorex.crypto.signatures._
-
-import scala.concurrent.duration._
-import scala.concurrent.Await
-
 import java.nio.file.{Files, Paths}
 
-import TestUtils._
+import akka.actor._
+import akka.io.Tcp
+import akka.testkit.TestProbe
+import org.scalatest._
+import raicoin.TestUtils._
+
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 class BlockchainActorSpec extends FunSuiteLike {
 

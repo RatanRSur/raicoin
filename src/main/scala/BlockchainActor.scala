@@ -1,21 +1,18 @@
 package raicoin
 
-import akka.actor._
-
-import akka.io.Tcp
-import akka.io.IO
-import java.net.InetAddress
-import java.net.InetSocketAddress
-import scala.concurrent.duration._
-import akka.util.ByteString
-import Serializer._
-import org.apache.commons.codec.binary.Hex
-import java.util.UUID._
 import java.io.File
+import java.net.InetSocketAddress
 import java.nio.file.Paths
-import scorex.crypto.signatures._
-import org.apache.commons.lang3.SerializationUtils.{serialize, deserialize}
+import java.util.UUID._
+
+import akka.actor._
+import akka.io.{IO, Tcp}
 import org.apache.commons.io.FileUtils
+import org.apache.commons.lang3.SerializationUtils.{deserialize, serialize}
+import raicoin.Serializer._
+import scorex.crypto.signatures._
+
+import scala.concurrent.duration._
 
 case object Broadcast
 case class Request(index: Int)
@@ -55,8 +52,8 @@ class BlockchainActor(var blockchain: Blockchain,
                       val startingPeer: Option[PeerInfo] = Some(BlockchainActor.BootstrapPeerInfo))
     extends Actor {
 
-  import context._
   import BlockchainActor._
+  import context._
 
   val id                           = randomUUID().toString
   var myPeerInfo: Option[PeerInfo] = None

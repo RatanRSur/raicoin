@@ -1,8 +1,5 @@
 package raicoin
 
-import scala.collection.SortedSet
-import scala.util.{Try, Success, Failure}
-import Exceptions._
 import org.apache.commons.codec.binary.Hex
 import scorex.crypto.signatures._
 

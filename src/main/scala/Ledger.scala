@@ -1,12 +1,13 @@
 package raicoin
 
 import java.security.MessageDigest
-import scala.collection.immutable.ListMap
-import scala.collection.SortedSet
-import scala.util.{Try, Success, Failure}
-import scorex.crypto.signatures._
+
 import org.apache.commons.codec.binary.Hex._
-import Exceptions._
+import raicoin.Exceptions._
+import scorex.crypto.signatures._
+
+import scala.collection.immutable.ListMap
+import scala.util.Try
 
 case class Ledger(private val internalLedger: ListMap[String, Long] = ListMap.empty)
     extends Iterable[(PublicKey, Long)]
