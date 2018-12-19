@@ -8,12 +8,6 @@ import scala.collection.immutable.ListMap
 
 object HashImplicits extends Serializable {
 
-  // TODO: martin odersky says to make the implicits as specific as possible
-  // I think he means that I should merge these and use the type condition set in hashable seq
-  // that the element type should be hashable
-  // I ran into problems doing this for HashableSet because it's element type (String)
-  // would itself need to be implicitly converted to HashableString so the compiler complained
-  // about string not being hashable
   implicit class HashableSeq[A <: SHAHashable](collection: Seq[A])
       extends SHAHashable
       with Serializable {

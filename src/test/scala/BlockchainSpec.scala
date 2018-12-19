@@ -61,35 +61,4 @@ class BlockchainSpec extends FunSuite {
         length4chain.ledger(PublicKey(tiamatPublicKey.clone())))
   }
 
-  //test("blockchain hash chain is solid all the way back") {
-  //val randomUserNames = Seq.fill(10)(randomUserName).toSet
-  //val testLedger = (new Ledger() /: randomUserNames) { (ledger, user) =>
-  //ledger + (user -> 50000000000L)
-  //}
-  //val randomTransactions = (0 until 10).map { _ =>
-  //val sender    = random(randomUserNames)
-  //val recipient = random(randomUserNames - sender)
-  //Transaction(sender, recipient, 1)
-  //}
-  //val chain = new Blockchain(Seq(new RootBlock(testLedger)))
-  //val newChain = (chain /: randomTransactions) { (blockchain, transaction) =>
-  //blockchain.mineBlock(Seq(transaction), random(randomUserNames))
-  //}
-
-  //def testBlock(mb: MinedBlock): Unit = {
-  //val manualPrevBlockHash = {
-  //val sha          = MessageDigest.getInstance("SHA-256")
-  //val ledger       = new SHAHashable { val hashDependencies = Seq(mb.ledger.hash) }
-  //val transactions = new SHAHashable { val hashDependencies = Seq(mb.transactions.hash) }
-  //sha.update(mb.previousBlock.hash)
-  //Seq[SHAHashable](ledger, transactions).foreach(x => sha.update(x.hash))
-  //sha.digest
-  //}
-  //assert(mb.hash == manualPrevBlockHash)
-  //mb.previousBlock match {
-  //case alsoMB: MinedBlock => testBlock(alsoMB)
-  //case _                  => ()
-  //}
-  //}
-  //}
 }

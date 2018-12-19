@@ -119,7 +119,6 @@ class BlockchainActor(var blockchain: Blockchain,
     }
     case block: MinedBlock => {
       // new* assignments to get around scala limitations of multiple assignment
-      //println(s"${system.name} $blockchain")
       if (block.signedTransactions.forall { st =>
             !seenTransactions.contains(st.transaction) &&
             st.verify
@@ -130,7 +129,6 @@ class BlockchainActor(var blockchain: Blockchain,
         orphans = newOrphans
         block.transactions.foreach(seenTransactions += _)
       }
-      //println(s"${system.name} $blockchain")
     }
     case RequestBlocksSince(index) => {
       (index until blockchain.height).map(i => blockchain(i)).foreach { block =>

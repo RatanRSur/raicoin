@@ -13,12 +13,10 @@ class ActorNetworking extends FunSuiteLike {
 
   test("remote actor automatically finds local actor and updates itself") {
 
-    //bind to 6364
     val systemA = ActorSystem("A")
     val actorA =
       systemA.actorOf(Props(new BlockchainActor(length4chain, tiamatPublicKey, None)), "A")
 
-    //bind to 6363
     val systemB = ActorSystem("B")
     val actorB  = systemB.actorOf(Props(new BlockchainActor(rootOnly, vecnaPublicKey)), "B")
 
