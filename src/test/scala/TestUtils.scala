@@ -1,7 +1,9 @@
 package raicoin
 
 import akka.io.Tcp
+import akka.testkit.{ImplicitSender, TestActors, TestKit, TestProbe}
 import Serializer._
+import scala.concurrent.duration._
 
 import scorex.crypto._
 import scorex.crypto.signatures._
@@ -43,7 +45,16 @@ object TestUtils {
     }
   }
 
-  def tcpUnwrap[T](supposedlyWrite: Any): T = {
-    fromByteString(supposedlyWrite.asInstanceOf[Tcp.Write].data).asInstanceOf[T]
+  def tcpUnwrap[T](supposedlyWrite: Tcp.Write): T = {
+    fromByteString(supposedlyWrite.data).asInstanceOf[T]
+  }
+
+  def receiveOneTcpMessage[T](p: TestProbe) = {
+    tcpUnwrap[T](p.receiveN(1).head.asInstanceOf[Tcp.Write])
+  }
+
+  def expectTcpMessage[T](p: TestProbe, msg: Any) = {
+    val tcpMessage = receiveOneTcpMessage[T](p)
+    assert(msg == tcpMessage, s"Expected: ${msg.toString}\nGot: ${tcpMessage.toString}")
   }
 }

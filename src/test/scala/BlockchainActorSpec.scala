@@ -30,7 +30,7 @@ class BlockchainActorSpec extends FunSuiteLike {
     length3chain.zipWithIndex.foreach {
       case (block, i) => {
         blockchainActor ! Request(i)
-        p.expectMsg(tcpWritten(block))
+        expectTcpMessage(p, block)
       }
     }
     system.terminate()
@@ -44,7 +44,7 @@ class BlockchainActorSpec extends FunSuiteLike {
     val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain, tiamatPublicKey)))
 
     blockchainActor ! Request(1)
-    p.expectMsg(tcpWritten(length2chain.tip))
+    expectTcpMessage[MinedBlock](p, length2chain.tip)
     system.terminate()
   }
 
@@ -62,11 +62,11 @@ class BlockchainActorSpec extends FunSuiteLike {
 
     blockchainActor ! chainA.tip
     blockchainActor ! Request(2)
-    p.expectMsg(tcpWritten(chainA.tip))
+    expectTcpMessage(p, chainA.tip)
     blockchainActor ! chainB(2)
     blockchainActor ! chainB(3)
     blockchainActor ! Request(2)
-    p.expectMsg(tcpWritten(chainB(2)))
+    expectTcpMessage(p, chainB(2))
     system.terminate()
   }
 
@@ -82,7 +82,7 @@ class BlockchainActorSpec extends FunSuiteLike {
       i => blockchainActor ! length4chain(i)
     }
     blockchainActor ! Request(3)
-    p.expectMsg(tcpWritten(length4chain(3)))
+    expectTcpMessage(p, length4chain(3))
     system.terminate()
   }
 
@@ -98,11 +98,11 @@ class BlockchainActorSpec extends FunSuiteLike {
     blockchainActor ! StartMining
     blockchainActor ! signedTransaction
     blockchainActor ! Request(2)
-    assert(tcpUnwrap[MinedBlock](p.receiveOne(1.seconds)).transactions.contains(transaction))
+    assert(receiveOneTcpMessage[MinedBlock](p).transactions.contains(transaction))
     blockchainActor ! StopMining
     blockchainActor ! signedTransaction
     blockchainActor ! Request(3)
-    assert(!tcpUnwrap[MinedBlock](p.receiveOne(1.seconds)).transactions.contains(transaction))
+    assert(!receiveOneTcpMessage[MinedBlock](p).transactions.contains(transaction))
     system.terminate()
   }
 
@@ -135,7 +135,7 @@ class BlockchainActorSpec extends FunSuiteLike {
     blockchainActor ! Transaction(tiamatPublicKey, vecnaPublicKey, 1).sign(tiamatPrivateKey)
     blockchainActor ! RequestBlocksSince(1)
     val msgs = p.receiveWhile(1.seconds, 500.millis) { case msg => msg }
-    assert(msgs.filter(msg => tcpUnwrap[MinedBlock](msg).transactions.contains(testTransactions(1).transaction)).size === 1)
+    assert(msgs.filter(msg => tcpUnwrap[MinedBlock](msg.asInstanceOf[Tcp.Write]).transactions.contains(testTransactions(1).transaction)).size === 1)
     blockchainActor ! Balance(vecnaPublicKey)
     p.expectMsg(2)
     system.terminate()
@@ -223,7 +223,7 @@ class BlockchainActorSpec extends FunSuiteLike {
       p.expectMsg(Saved(savePath.toFile.getName))
       blockchainActor ! Load(saveDirPathName)
       blockchainActor ! Request(3)
-      p.expectMsg(tcpWritten(length4chain(3)))
+      expectTcpMessage(p, length4chain(3))
       Await.result(system.terminate(), Duration.Inf)
     } finally {
       Files.deleteIfExists(savePath)
@@ -244,7 +244,7 @@ class BlockchainActorSpec extends FunSuiteLike {
       p.expectMsg(Saved(savePath.toFile.getName))
       val loadingActor = system.actorOf(Props(BlockchainActor.fromSavedBlockchain(savePath.toFile.getName, tiamatPublicKey)))
       loadingActor ! Request(3)
-      p.expectMsg(tcpWritten(length4chain(3)))
+      expectTcpMessage(p, length4chain(3))
       Await.result(system.terminate(), Duration.Inf)
     } finally {
       Files.deleteIfExists(savePath)

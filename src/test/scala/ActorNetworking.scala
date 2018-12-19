@@ -29,7 +29,7 @@ class ActorNetworking extends FunSuiteLike {
     Thread.sleep(1000)
     retriesOnTimeout(1) {
       actorB ! Request(3)
-      p.expectMsg(1.seconds, tcpWritten(length4chain(3)))
+      expectTcpMessage(p, length4chain(3))
     }
     Seq(actorA, actorB).foreach(_ ! Disconnect)
     Seq(systemA, systemB).foreach(system => Await.result(system.terminate(), Duration.Inf))
@@ -54,7 +54,7 @@ class ActorNetworking extends FunSuiteLike {
       try {
         assert(p.receiveWhile(1.seconds, 500.millis) { case msg => msg }
           .exists(msg => {
-              tcpUnwrap[MinedBlock](msg).transactions.contains(testTransactions(1).transaction)
+              tcpUnwrap[MinedBlock](msg.asInstanceOf[Tcp.Write]).transactions.contains(testTransactions(1).transaction)
         }))
       } finally {
         Seq(actorA, actorB).foreach(_ ! Disconnect)
@@ -104,7 +104,7 @@ class ActorNetworking extends FunSuiteLike {
     implicit val defaultSender = p.testActor
 
     actorC ! GetPeerInfo
-    val cInfo = tcpUnwrap[PeerInfo](p.receiveN(1).head)
+    val cInfo = tcpUnwrap[PeerInfo](p.receiveN(1).head.asInstanceOf[Tcp.Write])
 
     val systemD = ActorSystem("D")
     val actorD  = systemD.actorOf(Props(new BlockchainActor(rootOnly, tiamatPublicKey, Some(cInfo))), "D")
@@ -112,7 +112,7 @@ class ActorNetworking extends FunSuiteLike {
     Thread.sleep(1000)
     retriesOnTimeout(1) {
       actorD ! Request(3)
-      p.expectMsg(1.seconds, tcpWritten(length4chain(3)))
+      expectTcpMessage[MinedBlock](p, length4chain(3))
     }
 
     Seq(actorA, actorB, actorC, actorD).foreach(_ ! Disconnect)
