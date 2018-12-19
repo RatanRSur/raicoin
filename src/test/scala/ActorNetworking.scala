@@ -26,12 +26,15 @@ class ActorNetworking extends FunSuiteLike {
     implicit val defaultSender = p.testActor
 
     Thread.sleep(1000)
-    retriesOnTimeout(1) {
-      actorB ! Request(3)
-      expectTcpMessage(p, length4chain(3))
+    try {
+      retriesOnTimeout(1) {
+        actorB ! Request(3)
+        expectTcpMessage(p, length4chain(3))
+      }
+    } finally {
+      Seq(actorA, actorB).foreach(_ ! Disconnect)
+      Seq(systemA, systemB).foreach(system => Await.result(system.terminate(), Duration.Inf))
     }
-    Seq(actorA, actorB).foreach(_ ! Disconnect)
-    Seq(systemA, systemB).foreach(system => Await.result(system.terminate(), Duration.Inf))
   }
 
   test("not mining actor forwards transaction to peers") {
@@ -79,12 +82,16 @@ class ActorNetworking extends FunSuiteLike {
     implicit val defaultSender = p.testActor
 
     Thread.sleep(500)
-    retriesOnTimeout(1) {
-      actorC ! GetPeers
-      p.receiveN(2)
+    try {
+      retriesOnTimeout(1) {
+        actorC ! GetPeers
+        p.receiveN(2)
+      }
+    } finally {
+      Seq(actorA, actorB, actorC).foreach(_ ! Disconnect)
+      Seq(systemA, systemB, systemC).foreach(system =>
+        Await.result(system.terminate(), Duration.Inf))
     }
-    Seq(actorA, actorB, actorC).foreach(_ ! Disconnect)
-    Seq(systemA, systemB, systemC).foreach(system => Await.result(system.terminate(), Duration.Inf))
   }
 
   test("changes propagate through a bigger system") {
@@ -113,14 +120,16 @@ class ActorNetworking extends FunSuiteLike {
       systemD.actorOf(Props(new BlockchainActor(rootOnly, tiamatPublicKey, Some(cInfo))), "D")
 
     Thread.sleep(1000)
-    retriesOnTimeout(1) {
-      actorD ! Request(3)
-      expectTcpMessage[MinedBlock](p, length4chain(3))
+    try {
+      retriesOnTimeout(1) {
+        actorD ! Request(3)
+        expectTcpMessage[MinedBlock](p, length4chain(3))
+      }
+    } finally {
+      Seq(actorA, actorB, actorC, actorD).foreach(_ ! Disconnect)
+      Seq(systemA, systemB, systemC, systemD).foreach(system =>
+        Await.result(system.terminate(), Duration.Inf))
     }
-
-    Seq(actorA, actorB, actorC, actorD).foreach(_ ! Disconnect)
-    Seq(systemA, systemB, systemC, systemD).foreach(system =>
-      Await.result(system.terminate(), Duration.Inf))
   }
 
 }

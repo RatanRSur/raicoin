@@ -22,13 +22,16 @@ class BlockchainActorSpec extends FunSuiteLike {
     implicit val defaultSender = p.testActor
     blockchainActor ! length3chain.tip
     p.expectNoMessage(timeout)
-    length3chain.zipWithIndex.foreach {
-      case (block, i) => {
-        blockchainActor ! Request(i)
-        expectTcpMessage(p, block)
+    try {
+      length3chain.zipWithIndex.foreach {
+        case (block, i) => {
+          blockchainActor ! Request(i)
+          expectTcpMessage(p, block)
+        }
       }
+    } finally {
+      system.terminate()
     }
-    system.terminate()
   }
 
   test("responds to request for one block") {
@@ -55,14 +58,17 @@ class BlockchainActorSpec extends FunSuiteLike {
       .mineBlock(Seq(testTransactions(1)), tiamatPublicKey)
       .mineBlock(Seq(testTransactions(2)), tiamatPublicKey)
 
-    blockchainActor ! chainA.tip
-    blockchainActor ! Request(2)
-    expectTcpMessage(p, chainA.tip)
-    blockchainActor ! chainB(2)
-    blockchainActor ! chainB(3)
-    blockchainActor ! Request(2)
-    expectTcpMessage(p, chainB(2))
-    system.terminate()
+    try {
+      blockchainActor ! chainA.tip
+      blockchainActor ! Request(2)
+      expectTcpMessage(p, chainA.tip)
+      blockchainActor ! chainB(2)
+      blockchainActor ! chainB(3)
+      blockchainActor ! Request(2)
+      expectTcpMessage(p, chainB(2))
+    } finally {
+      system.terminate()
+    }
   }
 
   test("can handle blocks coming in in wrong order") {
@@ -76,8 +82,11 @@ class BlockchainActorSpec extends FunSuiteLike {
       blockchainActor ! length4chain(i)
     }
     blockchainActor ! Request(3)
-    expectTcpMessage(p, length4chain(3))
-    system.terminate()
+    try {
+      expectTcpMessage(p, length4chain(3))
+    } finally {
+      system.terminate()
+    }
   }
 
   test("mines block iff valid transaction received and is mining") {
@@ -89,15 +98,18 @@ class BlockchainActorSpec extends FunSuiteLike {
 
     val transaction       = Transaction(tiamatPublicKey, vecnaPublicKey, 1)
     val signedTransaction = transaction.sign(tiamatPrivateKey)
-    blockchainActor ! StartMining
-    blockchainActor ! signedTransaction
-    blockchainActor ! Request(2)
-    assert(receiveOneTcpMessage[MinedBlock](p).transactions.contains(transaction))
-    blockchainActor ! StopMining
-    blockchainActor ! signedTransaction
-    blockchainActor ! Request(3)
-    assert(!receiveOneTcpMessage[MinedBlock](p).transactions.contains(transaction))
-    system.terminate()
+    try {
+      blockchainActor ! StartMining
+      blockchainActor ! signedTransaction
+      blockchainActor ! Request(2)
+      assert(receiveOneTcpMessage[MinedBlock](p).transactions.contains(transaction))
+      blockchainActor ! StopMining
+      blockchainActor ! signedTransaction
+      blockchainActor ! Request(3)
+      assert(!receiveOneTcpMessage[MinedBlock](p).transactions.contains(transaction))
+    } finally {
+      system.terminate()
+    }
   }
 
   test("does not mine block when invalid transaction received") {
@@ -109,11 +121,14 @@ class BlockchainActorSpec extends FunSuiteLike {
 
     val transaction        = Transaction(tiamatPublicKey, vecnaPublicKey, 1)
     val invalidTransaction = transaction.sign(vecnaPrivateKey)
-    blockchainActor ! StartMining
-    blockchainActor ! invalidTransaction
-    blockchainActor ! Request(2)
-    p.expectNoMessage()
-    system.terminate()
+    try {
+      blockchainActor ! StartMining
+      blockchainActor ! invalidTransaction
+      blockchainActor ! Request(2)
+      p.expectNoMessage()
+    } finally {
+      system.terminate()
+    }
   }
 
   test("does not remine transaction") {
@@ -123,21 +138,24 @@ class BlockchainActorSpec extends FunSuiteLike {
 
     val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain, tiamatPublicKey)))
 
-    blockchainActor ! StartMining
-    blockchainActor ! testTransactions(1)
-    blockchainActor ! testTransactions(1)
-    blockchainActor ! Transaction(tiamatPublicKey, vecnaPublicKey, 1).sign(tiamatPrivateKey)
-    blockchainActor ! RequestBlocksSince(1)
-    val msgs = p.receiveWhile(1.seconds, 500.millis) { case msg => msg }
-    assert(
-      msgs
-        .filter(msg =>
-          tcpUnwrap[MinedBlock](msg.asInstanceOf[Tcp.Write]).transactions
-            .contains(testTransactions(1).transaction))
-        .size === 1)
-    blockchainActor ! Balance(vecnaPublicKey)
-    p.expectMsg(2)
-    system.terminate()
+    try {
+      blockchainActor ! StartMining
+      blockchainActor ! testTransactions(1)
+      blockchainActor ! testTransactions(1)
+      blockchainActor ! Transaction(tiamatPublicKey, vecnaPublicKey, 1).sign(tiamatPrivateKey)
+      blockchainActor ! RequestBlocksSince(1)
+      val msgs = p.receiveWhile(1.seconds, 500.millis) { case msg => msg }
+      assert(
+        msgs
+          .filter(msg =>
+            tcpUnwrap[MinedBlock](msg.asInstanceOf[Tcp.Write]).transactions
+              .contains(testTransactions(1).transaction))
+          .size === 1)
+      blockchainActor ! Balance(vecnaPublicKey)
+      p.expectMsg(2)
+    } finally {
+      system.terminate()
+    }
   }
 
   test("rejects block with invalid transactions") {
@@ -155,13 +173,16 @@ class BlockchainActorSpec extends FunSuiteLike {
     val validBlock =
       length2chain.mineBlock(Seq(validTransaction), vecnaPublicKey).tip
 
-    blockchainActor ! invalidBlock
-    blockchainActor ! Request(2)
-    p.expectNoMessage(1.seconds)
-    blockchainActor ! validBlock
-    blockchainActor ! Request(2)
-    p.receiveOne(500.millis)
-    system.terminate()
+    try {
+      blockchainActor ! invalidBlock
+      blockchainActor ! Request(2)
+      p.expectNoMessage(1.seconds)
+      blockchainActor ! validBlock
+      blockchainActor ! Request(2)
+      p.receiveOne(500.millis)
+    } finally {
+      system.terminate()
+    }
   }
 
   test("rejects block existing transaction") {
@@ -178,13 +199,16 @@ class BlockchainActorSpec extends FunSuiteLike {
     val blockWithTransaction          = chainWithTransaction.tip
     val blockWithDuplicateTransaction = chainWithDuplicateTransaction.tip
 
-    blockchainActor ! blockWithTransaction
-    blockchainActor ! blockWithDuplicateTransaction
-    blockchainActor ! Request(2)
-    p.receiveOne(500.millis)
-    blockchainActor ! Request(3)
-    p.expectNoMessage(1.seconds)
-    system.terminate()
+    try {
+      blockchainActor ! blockWithTransaction
+      blockchainActor ! blockWithDuplicateTransaction
+      blockchainActor ! Request(2)
+      p.receiveOne(500.millis)
+      blockchainActor ! Request(3)
+      p.expectNoMessage(1.seconds)
+    } finally {
+      system.terminate()
+    }
   }
 
   test("mining blockchain should have some value in account by the end") {
@@ -194,15 +218,18 @@ class BlockchainActorSpec extends FunSuiteLike {
 
     val blockchainActor = system.actorOf(Props(new BlockchainActor(rootOnly, tiamatPublicKey)))
 
-    blockchainActor ! StartMining
-    retriesOnTimeout(1) {
-      blockchainActor ! Request(1)
-      p.receiveOne(500.millis)
+    try {
+      blockchainActor ! StartMining
+      retriesOnTimeout(1) {
+        blockchainActor ! Request(1)
+        p.receiveOne(500.millis)
+      }
+      blockchainActor ! Balance(tiamatPublicKey)
+      val accountBalance = p.receiveOne(500.millis).asInstanceOf[Long]
+      assert(accountBalance > 0)
+    } finally {
+      system.terminate()
     }
-    blockchainActor ! Balance(tiamatPublicKey)
-    val accountBalance = p.receiveOne(500.millis).asInstanceOf[Long]
-    assert(accountBalance > 0)
-    system.terminate()
   }
 
   test("can save and load blockchain with messages") {
