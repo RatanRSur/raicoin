@@ -14,7 +14,9 @@ object HashImplicits extends Serializable {
   // I ran into problems doing this for HashableSet because it's element type (String)
   // would itself need to be implicitly converted to HashableString so the compiler complained
   // about string not being hashable
-  implicit class HashableSeq[A <: SHAHashable](collection: Seq[A]) extends SHAHashable with Serializable {
+  implicit class HashableSeq[A <: SHAHashable](collection: Seq[A])
+      extends SHAHashable
+      with Serializable {
     val hash: Array[Byte] = {
       val sha = MessageDigest.getInstance("SHA-256")
       collection.map(_.hash).foreach(sha.update)
@@ -30,7 +32,9 @@ object HashImplicits extends Serializable {
     }
   }
 
-  implicit class HashableListMap(collection: ListMap[String, Long]) extends SHAHashable with Serializable {
+  implicit class HashableListMap(collection: ListMap[String, Long])
+      extends SHAHashable
+      with Serializable {
     val hash: Array[Byte] = {
       val sha = MessageDigest.getInstance("SHA-256")
       collection.flatMap { case (k, v) => Seq(k.hash, v.hash) }.foreach(sha.update)

@@ -33,7 +33,8 @@ class BlockchainSpec extends FunSuite {
   }
 
   test("can't send more tokens than you have") {
-    val transactions = Seq(Transaction(vecnaPublicKey, tiamatPublicKey, 5), Transaction(tiamatPublicKey, vecnaPublicKey, 5)).map { tx =>
+    val transactions = Seq(Transaction(vecnaPublicKey, tiamatPublicKey, 5),
+                           Transaction(tiamatPublicKey, vecnaPublicKey, 5)).map { tx =>
       val keyToSignWith =
         if (tx.sender == tiamatPublicKey) tiamatPrivateKey else vecnaPrivateKey
       tx.sign(keyToSignWith)
@@ -55,24 +56,25 @@ class BlockchainSpec extends FunSuite {
   }
 
   test("ledger access determined by value of public key, not object") {
-    assert(length4chain.ledger(tiamatPublicKey) ===
-           length4chain.ledger(PublicKey(tiamatPublicKey.clone())))
+    assert(
+      length4chain.ledger(tiamatPublicKey) ===
+        length4chain.ledger(PublicKey(tiamatPublicKey.clone())))
   }
 
   //test("blockchain hash chain is solid all the way back") {
-    //val randomUserNames = Seq.fill(10)(randomUserName).toSet
-    //val testLedger = (new Ledger() /: randomUserNames) { (ledger, user) =>
-      //ledger + (user -> 50000000000L)
-    //}
-    //val randomTransactions = (0 until 10).map { _ =>
-      //val sender    = random(randomUserNames)
-      //val recipient = random(randomUserNames - sender)
-      //Transaction(sender, recipient, 1)
-    //}
-    //val chain = new Blockchain(Seq(new RootBlock(testLedger)))
-    //val newChain = (chain /: randomTransactions) { (blockchain, transaction) =>
-      //blockchain.mineBlock(Seq(transaction), random(randomUserNames))
-    //}
+  //val randomUserNames = Seq.fill(10)(randomUserName).toSet
+  //val testLedger = (new Ledger() /: randomUserNames) { (ledger, user) =>
+  //ledger + (user -> 50000000000L)
+  //}
+  //val randomTransactions = (0 until 10).map { _ =>
+  //val sender    = random(randomUserNames)
+  //val recipient = random(randomUserNames - sender)
+  //Transaction(sender, recipient, 1)
+  //}
+  //val chain = new Blockchain(Seq(new RootBlock(testLedger)))
+  //val newChain = (chain /: randomTransactions) { (blockchain, transaction) =>
+  //blockchain.mineBlock(Seq(transaction), random(randomUserNames))
+  //}
 
   //def testBlock(mb: MinedBlock): Unit = {
   //val manualPrevBlockHash = {

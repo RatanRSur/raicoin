@@ -6,13 +6,13 @@ lazy val root = (project in file(".")).settings(
     )),
   name := "raicoin",
   libraryDependencies ++= Seq(
-    "org.scalatest"      %% "scalatest"    % "3.0.5",
-    "com.typesafe.akka"  %% "akka-actor"   % "2.5.18",
-    "com.typesafe.akka"  %% "akka-testkit" % "2.5.18" % Test,
-    "commons-codec"      % "commons-codec" % "1.11",
-    "org.scorexfoundation" %% "scrypto" % "2.1.2",
-    "org.apache.commons" % "commons-lang3" % "3.8.1",
-    "commons-io" % "commons-io" % "2.6"
+    "org.scalatest"        %% "scalatest"    % "3.0.5",
+    "com.typesafe.akka"    %% "akka-actor"   % "2.5.18",
+    "com.typesafe.akka"    %% "akka-testkit" % "2.5.18" % Test,
+    "commons-codec"        % "commons-codec" % "1.11",
+    "org.scorexfoundation" %% "scrypto"      % "2.1.2",
+    "org.apache.commons"   % "commons-lang3" % "3.8.1",
+    "commons-io"           % "commons-io"    % "2.6"
   ),
   scalacOptions ++= Seq("-feature", "-deprecation"),
   parallelExecution in Test := false,

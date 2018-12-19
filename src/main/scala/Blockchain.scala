@@ -3,11 +3,13 @@ package raicoin
 import org.apache.commons.codec.binary.Hex
 import scorex.crypto.signatures._
 
-class Blockchain(blocksByHash: Map[String, Block] = Map((Hex.encodeHexString(EmptyRootBlock.hash) ->
-                                                         EmptyRootBlock)),
-                 tips: Seq[Block]                 = Seq(EmptyRootBlock),
-                 val difficulty: Int              = 2)
-    extends Iterable[Block] with Serializable {
+class Blockchain(blocksByHash: Map[String, Block] = Map(
+                   (Hex.encodeHexString(EmptyRootBlock.hash) ->
+                     EmptyRootBlock)),
+                 tips: Seq[Block] = Seq(EmptyRootBlock),
+                 val difficulty: Int = 2)
+    extends Iterable[Block]
+    with Serializable {
 
   val tip             = tips.head
   val height          = tips.map(_.index).max + 1
@@ -69,20 +71,20 @@ class Blockchain(blocksByHash: Map[String, Block] = Map((Hex.encodeHexString(Emp
       }
     }.toSeq.reverseIterator
 
-  def mineBlock(signedTransactions: Seq[SignedTransaction],
-                miner: PublicKey): Blockchain = {
+  def mineBlock(signedTransactions: Seq[SignedTransaction], miner: PublicKey): Blockchain = {
     append(
       new UnminedBlock(Hex.encodeHexString(tip.hash),
-                     tip.index,
-                     ledger,
-                     signedTransactions,
-                     miner,
-                     difficulty).mine)
+                       tip.index,
+                       ledger,
+                       signedTransactions,
+                       miner,
+                       difficulty).mine)
   }
 
   override val toString: String = {
     val iter = iterator
-    s"${getClass.getName} main line:\n  ${iter.take(5).mkString("\n  ")}${if (iter.hasNext) "\n  ..." else ""}"
+    s"${getClass.getName} main line:\n  ${iter.take(5).mkString("\n  ")}${if (iter.hasNext) "\n  ..."
+    else ""}"
   }
 
 }

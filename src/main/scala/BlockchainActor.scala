@@ -39,9 +39,12 @@ case object Height
 
 object BlockchainActor {
   val BootstrapPeerInfo = PeerInfo("55f119f3-c33b-4078-92e5-923f6cd200f2", "localhost", 6364)
-  def fromSavedBlockchain(pathToBlockchain: String, publicKey: PublicKey, startingPeer: Option[PeerInfo] = Some(BlockchainActor.BootstrapPeerInfo)): BlockchainActor = {
-    new BlockchainActor(deserialize(
-      FileUtils.readFileToByteArray(Paths.get(pathToBlockchain).toFile)),
+  def fromSavedBlockchain(
+      pathToBlockchain: String,
+      publicKey: PublicKey,
+      startingPeer: Option[PeerInfo] = Some(BlockchainActor.BootstrapPeerInfo)): BlockchainActor = {
+    new BlockchainActor(
+      deserialize(FileUtils.readFileToByteArray(Paths.get(pathToBlockchain).toFile)),
       publicKey,
       startingPeer)
   }
@@ -60,7 +63,7 @@ class BlockchainActor(var blockchain: Blockchain,
   var knownPeers                   = Set.empty[PeerInfo]
   var connectedPeers               = Map[ActorRef, Option[PeerInfo]]()
 
-  var orphans = Seq[MinedBlock]()
+  var orphans          = Seq[MinedBlock]()
   var seenTransactions = Set.empty[Transaction]
 
   var myListeningAddress: Option[InetSocketAddress] = None
@@ -77,8 +80,8 @@ class BlockchainActor(var blockchain: Blockchain,
 
   def mineSignedTransaction(st: SignedTransaction) = {
     if (!seenTransactions.contains(st.transaction) && st.verify) {
-        blockchain = blockchain.mineBlock(Seq(st), publicKey)
-        seenTransactions += st.transaction
+      blockchain = blockchain.mineBlock(Seq(st), publicKey)
+      seenTransactions += st.transaction
     }
   }
 
@@ -118,9 +121,9 @@ class BlockchainActor(var blockchain: Blockchain,
       // new* assignments to get around scala limitations of multiple assignment
       //println(s"${system.name} $blockchain")
       if (block.signedTransactions.forall { st =>
-          !seenTransactions.contains(st.transaction) &&
-          st.verify
-        }) {
+            !seenTransactions.contains(st.transaction) &&
+            st.verify
+          }) {
 
         val (newBlockchain, newOrphans) = blockchain.resolveOrphans(orphans :+ block)
         blockchain = newBlockchain
@@ -130,8 +133,8 @@ class BlockchainActor(var blockchain: Blockchain,
       //println(s"${system.name} $blockchain")
     }
     case RequestBlocksSince(index) => {
-      (index until blockchain.height).map(i => blockchain(i)).foreach {
-        block => sender() ! Tcp.Write(toByteString(block))
+      (index until blockchain.height).map(i => blockchain(i)).foreach { block =>
+        sender() ! Tcp.Write(toByteString(block))
       }
     }
     case Request(index) => {
@@ -195,9 +198,7 @@ class BlockchainActor(var blockchain: Blockchain,
     }
     case Save(directoryName) => {
       val chainFile = new File(directoryName, "raicoin.chain")
-      FileUtils.writeByteArrayToFile(
-        chainFile,
-        serialize(blockchain))
+      FileUtils.writeByteArrayToFile(chainFile, serialize(blockchain))
       sender() ! Saved(chainFile.getName)
     }
     case Load(directoryName) => {
@@ -205,7 +206,7 @@ class BlockchainActor(var blockchain: Blockchain,
         FileUtils.readFileToByteArray(new File(directoryName, "raicoin.chain")))
     }
     case Balance(publicKey) => sender() ! blockchain.ledger(publicKey)
-    case Height => sender() ! blockchain.height
+    case Height             => sender() ! blockchain.height
     case other => {
       println(s"Unhandled Message: ${context.system}: $other")
     }

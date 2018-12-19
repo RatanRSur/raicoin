@@ -72,23 +72,22 @@ class BlockchainActorSpec extends FunSuiteLike {
 
     val blockchainActor = system.actorOf(Props(new BlockchainActor(rootOnly, tiamatPublicKey)))
 
-
-    scala.util.Random.shuffle(0 to length4chain.height - 1).foreach {
-      i => blockchainActor ! length4chain(i)
+    scala.util.Random.shuffle(0 to length4chain.height - 1).foreach { i =>
+      blockchainActor ! length4chain(i)
     }
     blockchainActor ! Request(3)
     expectTcpMessage(p, length4chain(3))
     system.terminate()
   }
 
-  test("mines block iff valid transaction received and is mining"){
+  test("mines block iff valid transaction received and is mining") {
     implicit val system        = ActorSystem()
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
 
     val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain, tiamatPublicKey)))
 
-    val transaction = Transaction(tiamatPublicKey, vecnaPublicKey, 1)
+    val transaction       = Transaction(tiamatPublicKey, vecnaPublicKey, 1)
     val signedTransaction = transaction.sign(tiamatPrivateKey)
     blockchainActor ! StartMining
     blockchainActor ! signedTransaction
@@ -101,14 +100,14 @@ class BlockchainActorSpec extends FunSuiteLike {
     system.terminate()
   }
 
-  test("does not mine block when invalid transaction received"){
+  test("does not mine block when invalid transaction received") {
     implicit val system        = ActorSystem()
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
 
     val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain, tiamatPublicKey)))
 
-    val transaction = Transaction(tiamatPublicKey, vecnaPublicKey, 1)
+    val transaction        = Transaction(tiamatPublicKey, vecnaPublicKey, 1)
     val invalidTransaction = transaction.sign(vecnaPrivateKey)
     blockchainActor ! StartMining
     blockchainActor ! invalidTransaction
@@ -117,7 +116,7 @@ class BlockchainActorSpec extends FunSuiteLike {
     system.terminate()
   }
 
-  test("does not remine transaction"){
+  test("does not remine transaction") {
     implicit val system        = ActorSystem()
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
@@ -130,20 +129,25 @@ class BlockchainActorSpec extends FunSuiteLike {
     blockchainActor ! Transaction(tiamatPublicKey, vecnaPublicKey, 1).sign(tiamatPrivateKey)
     blockchainActor ! RequestBlocksSince(1)
     val msgs = p.receiveWhile(1.seconds, 500.millis) { case msg => msg }
-    assert(msgs.filter(msg => tcpUnwrap[MinedBlock](msg.asInstanceOf[Tcp.Write]).transactions.contains(testTransactions(1).transaction)).size === 1)
+    assert(
+      msgs
+        .filter(msg =>
+          tcpUnwrap[MinedBlock](msg.asInstanceOf[Tcp.Write]).transactions
+            .contains(testTransactions(1).transaction))
+        .size === 1)
     blockchainActor ! Balance(vecnaPublicKey)
     p.expectMsg(2)
     system.terminate()
   }
 
-  test("rejects block with invalid transactions"){
+  test("rejects block with invalid transactions") {
     implicit val system        = ActorSystem()
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
 
     val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain, tiamatPublicKey)))
 
-    val transaction = Transaction(tiamatPublicKey, vecnaPublicKey, 1)
+    val transaction        = Transaction(tiamatPublicKey, vecnaPublicKey, 1)
     val invalidTransaction = transaction.sign(vecnaPrivateKey)
     val invalidBlock =
       length2chain.mineBlock(Seq(invalidTransaction), vecnaPublicKey).tip
@@ -160,7 +164,7 @@ class BlockchainActorSpec extends FunSuiteLike {
     system.terminate()
   }
 
-  test("rejects block existing transaction"){
+  test("rejects block existing transaction") {
     implicit val system        = ActorSystem()
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
@@ -171,7 +175,7 @@ class BlockchainActorSpec extends FunSuiteLike {
     val chainWithDuplicateTransaction =
       chainWithTransaction.mineBlock(Seq(testTransactions(0)), vecnaPublicKey)
 
-    val blockWithTransaction = chainWithTransaction.tip
+    val blockWithTransaction          = chainWithTransaction.tip
     val blockWithDuplicateTransaction = chainWithDuplicateTransaction.tip
 
     blockchainActor ! blockWithTransaction
@@ -183,7 +187,7 @@ class BlockchainActorSpec extends FunSuiteLike {
     system.terminate()
   }
 
-  test("mining blockchain should have some value in account by the end"){
+  test("mining blockchain should have some value in account by the end") {
     implicit val system        = ActorSystem()
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
@@ -207,9 +211,10 @@ class BlockchainActorSpec extends FunSuiteLike {
     implicit val defaultSender = p.testActor
 
     val blockchainActor = system.actorOf(Props(new BlockchainActor(length3chain, tiamatPublicKey)))
-    val length4chainActor = system.actorOf(Props(new BlockchainActor(length4chain, tiamatPublicKey)))
+    val length4chainActor =
+      system.actorOf(Props(new BlockchainActor(length4chain, tiamatPublicKey)))
 
-    val savePath = Paths.get("raicoin.chain")
+    val savePath        = Paths.get("raicoin.chain")
     val saveDirPathName = savePath.toAbsolutePath.getParent.toString
     try {
       blockchainActor ! Request(3)
@@ -232,12 +237,13 @@ class BlockchainActorSpec extends FunSuiteLike {
 
     val savingActor = system.actorOf(Props(new BlockchainActor(length4chain, tiamatPublicKey)))
 
-    val savePath = Paths.get("raicoin.chain")
+    val savePath        = Paths.get("raicoin.chain")
     val saveDirPathName = savePath.toAbsolutePath.getParent.toString
     try {
       savingActor ! Save(saveDirPathName)
       p.expectMsg(Saved(savePath.toFile.getName))
-      val loadingActor = system.actorOf(Props(BlockchainActor.fromSavedBlockchain(savePath.toFile.getName, tiamatPublicKey)))
+      val loadingActor = system.actorOf(
+        Props(BlockchainActor.fromSavedBlockchain(savePath.toFile.getName, tiamatPublicKey)))
       loadingActor ! Request(3)
       expectTcpMessage(p, length4chain(3))
       Await.result(system.terminate(), Duration.Inf)
@@ -253,19 +259,19 @@ class BlockchainActorSpec extends FunSuiteLike {
 
     val blockchainActor = system.actorOf(Props(new BlockchainActor(rootOnly, tiamatPublicKey)))
 
-    val savePath = Paths.get("raicoin.chain")
+    val savePath        = Paths.get("raicoin.chain")
     val saveDirPathName = savePath.toAbsolutePath.getParent.toString
-      blockchainActor ! StartMining
-      def loopUntilBig(): Unit = {
-        blockchainActor ! Height
-        if (p.receiveOne(100.millis).asInstanceOf[Int] > 1000) ()
-        else {
-          Thread.sleep(100)
-          loopUntilBig()
-        }
+    blockchainActor ! StartMining
+    def loopUntilBig(): Unit = {
+      blockchainActor ! Height
+      if (p.receiveOne(100.millis).asInstanceOf[Int] > 1000) ()
+      else {
+        Thread.sleep(100)
+        loopUntilBig()
       }
-      loopUntilBig()
-      blockchainActor ! StopMining
+    }
+    loopUntilBig()
+    blockchainActor ! StopMining
     try {
       blockchainActor ! Save(saveDirPathName)
       p.expectMsg(Saved(savePath.toFile.getName))

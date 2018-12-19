@@ -20,7 +20,9 @@ case class Ledger(private val internalLedger: ListMap[String, Long] = ListMap.em
     new Ledger(internalLedger + (encodeHexString(kv._1) -> kv._2))
   def contains(pk: PublicKey): Boolean = internalLedger.contains(encodeHexString(pk))
   //from Iterable
-  def iterator = internalLedger.iterator.map { case (pkString, bal) => (PublicKey(decodeHex(pkString)), bal) }
+  def iterator = internalLedger.iterator.map {
+    case (pkString, bal) => (PublicKey(decodeHex(pkString)), bal)
+  }
 
   def rewardMiner(miner: PublicKey): Ledger = increase(miner, 1)
 

@@ -5,21 +5,20 @@ import akka.testkit.TestProbe
 import raicoin.Serializer._
 import scorex.crypto.signatures._
 
-
 object TestUtils {
 
   val (tiamatPrivateKey, tiamatPublicKey): (PrivateKey, PublicKey) = Curve25519.createKeyPair
-  val (vecnaPrivateKey, vecnaPublicKey): (PrivateKey, PublicKey) = Curve25519.createKeyPair
+  val (vecnaPrivateKey, vecnaPublicKey): (PrivateKey, PublicKey)   = Curve25519.createKeyPair
 
   val testTransactions =
     Seq(Transaction(vecnaPublicKey, tiamatPublicKey, 1),
         Transaction(tiamatPublicKey, vecnaPublicKey, 1),
         Transaction(vecnaPublicKey, tiamatPublicKey, 1))
-    .map { tx =>
-      val keyToSignWith =
-        if (tx.sender == tiamatPublicKey) tiamatPrivateKey else vecnaPrivateKey
-      tx.sign(keyToSignWith)
-    }
+      .map { tx =>
+        val keyToSignWith =
+          if (tx.sender == tiamatPublicKey) tiamatPrivateKey else vecnaPrivateKey
+        tx.sign(keyToSignWith)
+      }
 
   val rootOnly = new Blockchain(difficulty = 1)
   val length2chain =
@@ -31,14 +30,15 @@ object TestUtils {
     Tcp.Write(toByteString(obj))
   }
 
-  def retriesOnTimeout[T](n: Int)(block: =>T): T = {
+  def retriesOnTimeout[T](n: Int)(block: => T): T = {
     require(n >= 0)
     try {
       block
     } catch {
-      case ae: AssertionError => if (ae.getMessage.contains("timeout") && n > 0) {
-        retriesOnTimeout(n-1)(block)
-      } else throw ae
+      case ae: AssertionError =>
+        if (ae.getMessage.contains("timeout") && n > 0) {
+          retriesOnTimeout(n - 1)(block)
+        } else throw ae
     }
   }
 
