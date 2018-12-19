@@ -26,7 +26,7 @@ abstract class Block extends SHAHashable with Serializable {
   val ledger: Ledger
 }
 
-case class RootBlock(val ledger: Ledger = new Ledger()) extends Block {
+case class RootBlock(ledger: Ledger = new Ledger()) extends Block {
   val hash = {
     val sha = MessageDigest.getInstance("SHA-256")
     sha.update(ledger.hash)
@@ -39,7 +39,7 @@ case class RootBlock(val ledger: Ledger = new Ledger()) extends Block {
 
 object EmptyRootBlock extends RootBlock()
 
-case class UnminedBlock(val parentHash: String,
+case class UnminedBlock(parentHash: String,
                         parentIndex: Int,
                         parentLedger: Ledger,
                         signedTransactions: Seq[SignedTransaction],
@@ -67,8 +67,8 @@ case class UnminedBlock(val parentHash: String,
   }
 }
 
-case class MinedBlock(val parentHash: String,
-                      val index: Int,
+case class MinedBlock(parentHash: String,
+                      index: Int,
                       ledger: Ledger,
                       signedTransactions: Seq[SignedTransaction],
                       difficulty: Int,
