@@ -8,7 +8,7 @@ import scorex.crypto.signatures._
 import org.apache.commons.codec.binary.Hex._
 import Exceptions._
 
-class Ledger(private val internalLedger: ListMap[String, Long] = ListMap.empty)
+case class Ledger(private val internalLedger: ListMap[String, Long] = ListMap.empty)
     extends Iterable[(PublicKey, Long)]
     with SHAHashable
     with Serializable {
