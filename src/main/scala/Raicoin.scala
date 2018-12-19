@@ -15,9 +15,9 @@ import scala.concurrent.duration._
 import scala.concurrent.Await
 
 object Raicoin {
-  val keyBasename = "raicoin"
+  val keyBasename    = "raicoin"
   val privateKeyName = s"$keyBasename.priv"
-  val publicKeyName = s"$keyBasename.pub"
+  val publicKeyName  = s"$keyBasename.pub"
 
   def main(args: Array[String]): Unit = {
     if (!args.contains("-q")) {
@@ -31,8 +31,7 @@ object Raicoin {
       print("Directory to save raicoin.pub, raicoin.priv: ")
       val directory = readDirectory()
       val (privateKeyFile, publicKeyFile) =
-        (new File(directory, privateKeyName),
-         new File(directory, publicKeyName))
+        (new File(directory, privateKeyName), new File(directory, publicKeyName))
       FileUtils.writeByteArrayToFile(privateKeyFile, privKey)
       FileUtils.writeByteArrayToFile(publicKeyFile, pubKey)
       loadPrivateAndPublicKey(directory)
@@ -41,7 +40,7 @@ object Raicoin {
       loadPrivateAndPublicKey(readDirectory())
     }
 
-    val system  = ActorSystem()
+    val system = ActorSystem()
     println("[L]oad existing chain, [R]etrieve from network?")
     val chainLoadingNeeded = "Ll".contains(readCharOneOf("LlRr"))
     val blockchainActorRef = if (chainLoadingNeeded) {
@@ -57,7 +56,7 @@ object Raicoin {
   }
 
   def readDirectory(): String = {
-    val pathSep = Option(System.getProperty("file.separator")).get
+    val pathSep          = Option(System.getProperty("file.separator")).get
     val inputWithPathSep = readLine().stripSuffix(pathSep) + pathSep
 
     /*expand home dir if needed*/
@@ -67,10 +66,8 @@ object Raicoin {
   }
 
   def loadPrivateAndPublicKey(directoryName: String): (PrivateKey, PublicKey) = {
-    (PrivateKey(
-      FileUtils.readFileToByteArray(new File(directoryName, privateKeyName))),
-     PublicKey(
-       FileUtils.readFileToByteArray(new File(directoryName, publicKeyName))))
+    (PrivateKey(FileUtils.readFileToByteArray(new File(directoryName, privateKeyName))),
+     PublicKey(FileUtils.readFileToByteArray(new File(directoryName, publicKeyName))))
   }
 
   def readCharOneOf(validChars: String): Char = {
