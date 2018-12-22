@@ -11,9 +11,12 @@ class PromptActor(blockchainActorRef: ActorRef, publicKey: PublicKey, privateKey
 
   import context._
 
+  blockchainActorRef ! RegisterPrompt
+
   def prompt(): Unit = self ! Option(readLine("> ")).getOrElse("exit").trim
 
   prompt()
+
   def receive = {
     case "save" => {
       blockchainActorRef ! Save(".")
@@ -46,6 +49,7 @@ class PromptActor(blockchainActorRef: ActorRef, publicKey: PublicKey, privateKey
     }
     case ""     => prompt()
     case "exit" => sys.exit(0)
+    case str if sender() == blockchainActorRef => println(str)
     case _ => {
       println("Invalid command")
       prompt()

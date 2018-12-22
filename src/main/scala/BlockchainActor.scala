@@ -28,6 +28,7 @@ case object StartMining
 case object StopMining
 case object MineEmptyBlockIfIdle
 case object Height
+case object RegisterPrompt
 
 object SerializableInetSocketAddressImplicit {
   implicit class SerializableINSA(insa: InetSocketAddress)
@@ -68,6 +69,11 @@ class BlockchainActor(var blockchain: Blockchain,
   var myListeningAddress: Option[InetSocketAddress] = None
 
   val tcpManager = IO(Tcp)
+
+  var promptActor: Option[ActorRef] = None
+  def logtoPrompt(str: String): Unit = {
+    promptActor.foreach(_ ! str)
+  }
 
   startingPeer match {
     case Some(sp) => {
@@ -140,6 +146,7 @@ class BlockchainActor(var blockchain: Blockchain,
       }
     }
     case Tcp.Bound(insa) => {
+      logtoPrompt(s"bound to $insa")
       mySocketAddress = Some(insa)
       knownPeers.foreach { kp: InetSocketAddress =>
         {
@@ -147,7 +154,8 @@ class BlockchainActor(var blockchain: Blockchain,
         }
       }
     }
-    case _: Tcp.Connected => {
+    case Tcp.Connected(remoteAddress, _) => {
+      logtoPrompt(s"connected to $remoteAddress")
       val peerRef = sender()
 
       peerRef ! Tcp.Register(context.self)
@@ -183,6 +191,7 @@ class BlockchainActor(var blockchain: Blockchain,
           connectedPeers += (currentConnection -> Some(insa))
           currentConnection ! Tcp.Write(toByteString(GetPeers))
         } else if (!knownPeers.contains(insa)) {
+          logtoPrompt(s"new peer: $insa")
           knownPeers += insa
           tcpManager ! Tcp.Connect(insa)
         }
@@ -204,6 +213,10 @@ class BlockchainActor(var blockchain: Blockchain,
     }
     case GetBalance(publicKey) => sender() ! Balance(publicKey, blockchain.ledger(publicKey))
     case Height                => sender() ! blockchain.height
+    case RegisterPrompt => {
+      val pa = sender()
+      promptActor = Some(pa)
+    }
     case other => {
       //println(s"Unhandled Message: ${context.system}: $other")
     }

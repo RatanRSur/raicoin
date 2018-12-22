@@ -49,7 +49,7 @@ object Raicoin {
       system.actorOf(
         Props(BlockchainActor.fromSavedBlockchain(directory + "raicoin.chain", publicKey)))
     } else {
-      system.actorOf(Props(new BlockchainActor(new Blockchain(), publicKey)))
+      system.actorOf(Props(new BlockchainActor(new Blockchain(), publicKey, Some(BlockchainActor.BootstrapInetSocketAddr))))
     }
 
     system.actorOf(Props(new PromptActor(blockchainActorRef, publicKey, privateKey)))
