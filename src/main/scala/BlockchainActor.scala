@@ -150,6 +150,7 @@ class BlockchainActor(var blockchain: Blockchain,
       mySocketAddress = Some(insa)
       knownPeers.foreach { kp: InetSocketAddress =>
         {
+          logToPrompt(s"trying to connect to $kp")
           tcpManager ! Tcp.Connect(kp)
         }
       }
