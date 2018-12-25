@@ -34,9 +34,8 @@ object Raicoin {
         (new File(directory, privateKeyName), new File(directory, publicKeyName))
       FileUtils.writeByteArrayToFile(privateKeyFile, privKey)
       FileUtils.writeByteArrayToFile(publicKeyFile, pubKey)
-      loadPrivateAndPublicKey(directory)
+      (privKey, pubKey)
     } else {
-      print(s"Directory where $privateKeyName and $publicKeyName are saved: ")
       loadPrivateAndPublicKey(readDirectory())
     }
 
@@ -70,9 +69,21 @@ object Raicoin {
     } else inputWithPathSep
   }
 
-  def loadPrivateAndPublicKey(directoryName: String): (PrivateKey, PublicKey) = {
-    (PrivateKey(FileUtils.readFileToByteArray(new File(directoryName, privateKeyName))),
-     PublicKey(FileUtils.readFileToByteArray(new File(directoryName, publicKeyName))))
+  def loadPrivateAndPublicKey(directoryName: => String): (PrivateKey, PublicKey) = {
+    print(s"Directory where $privateKeyName and $publicKeyName are saved: ")
+    try {
+      (FileUtils
+         .readFileToByteArray(new File(directoryName, privateKeyName))
+         .asInstanceOf[PrivateKey],
+       FileUtils
+         .readFileToByteArray(new File(directoryName, privateKeyName))
+         .asInstanceOf[PublicKey])
+    } catch {
+      case fnfe: java.io.FileNotFoundException => {
+        println(fnfe.getMessage)
+        loadPrivateAndPublicKey(directoryName)
+      }
+    }
   }
 
   def readCharOneOf(validChars: String): Char = {
