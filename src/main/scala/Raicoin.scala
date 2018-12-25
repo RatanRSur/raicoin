@@ -61,7 +61,7 @@ object Raicoin {
 
   def readDirectory(): String = {
     val pathSep          = Option(System.getProperty("file.separator")).get
-    val inputWithPathSep = readLine().stripSuffix(pathSep) + pathSep
+    val inputWithPathSep = Option(readLine()).getOrElse(sys.exit(0)).stripSuffix(pathSep) + pathSep
 
     /*expand home dir if needed*/
     if (inputWithPathSep.startsWith("~/")) {
