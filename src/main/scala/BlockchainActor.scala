@@ -1,9 +1,8 @@
 package raicoin
 
 import java.io.File
-import java.net.InetSocketAddress
+import java.net.{InetAddress, InetSocketAddress}
 import java.nio.file.Paths
-import java.util.UUID._
 
 import akka.actor._
 import akka.io.{IO, Tcp}
@@ -18,14 +17,6 @@ case object Broadcast
 case class Request(index: Int)
 case class RequestBlocksSince(index: Int)
 case object GetPeers
-case class PeerInfo(id: String, hostname: String, port: Int) {
-  def inetSocketAddress = new InetSocketAddress(hostname, port)
-}
-case object PeerInfo {
-  def fromInetSocketAddress(id: String, insa: InetSocketAddress): PeerInfo = {
-    PeerInfo(id, insa.getHostName, insa.getPort)
-  }
-}
 case object GetPeerInfo
 case object Disconnect
 case class Save(directoryName: String)
@@ -38,11 +29,11 @@ case object MineEmptyBlockIfIdle
 case object Height
 
 object BlockchainActor {
-  val BootstrapPeerInfo = PeerInfo("55f119f3-c33b-4078-92e5-923f6cd200f2", "localhost", 6364)
-  def fromSavedBlockchain(
-      pathToBlockchain: String,
-      publicKey: PublicKey,
-      startingPeer: Option[PeerInfo] = Some(BlockchainActor.BootstrapPeerInfo)): BlockchainActor = {
+  val BootstrapInetSocketAddr = new InetSocketAddress(InetAddress.getLocalHost, 6364)
+  def fromSavedBlockchain(pathToBlockchain: String,
+                          publicKey: PublicKey,
+                          startingPeer: Option[InetSocketAddress] = Some(
+                            BlockchainActor.BootstrapInetSocketAddr)): BlockchainActor = {
     new BlockchainActor(
       deserialize(FileUtils.readFileToByteArray(Paths.get(pathToBlockchain).toFile)),
       publicKey,
@@ -50,18 +41,25 @@ object BlockchainActor {
   }
 }
 
+object SerializableInetSocketAddressImplicit {
+  implicit class SerializableINSA(insa: InetSocketAddress)
+      extends InetSocketAddress(insa.getAddress, insa.getPort)
+      with Serializable
+}
+
 class BlockchainActor(var blockchain: Blockchain,
                       publicKey: PublicKey,
-                      val startingPeer: Option[PeerInfo] = Some(BlockchainActor.BootstrapPeerInfo))
+                      val startingPeer: Option[InetSocketAddress] = Some(
+                        BlockchainActor.BootstrapInetSocketAddr))
     extends Actor {
 
   import BlockchainActor._
   import context._
+  import SerializableInetSocketAddressImplicit._
 
-  val id                           = randomUUID().toString
-  var myPeerInfo: Option[PeerInfo] = None
-  var knownPeers                   = Set.empty[PeerInfo]
-  var connectedPeers               = Map[ActorRef, Option[PeerInfo]]()
+  var mySocketAddress: Option[InetSocketAddress] = None
+  var knownPeers                                 = Set.empty[InetSocketAddress]
+  var connectedPeers                             = Map[ActorRef, Option[InetSocketAddress]]()
 
   var orphans          = Seq[MinedBlock]()
   var seenTransactions = Set.empty[Transaction]
@@ -75,7 +73,7 @@ class BlockchainActor(var blockchain: Blockchain,
       knownPeers += sp
       tcpManager ! Tcp.Bind(self, new InetSocketAddress("localhost", 0))
     }
-    case None => tcpManager ! Tcp.Bind(self, BootstrapPeerInfo.inetSocketAddress)
+    case None => tcpManager ! Tcp.Bind(self, BootstrapInetSocketAddr)
   }
 
   def mineSignedTransaction(st: SignedTransaction) = {
@@ -140,11 +138,11 @@ class BlockchainActor(var blockchain: Blockchain,
         sender() ! Tcp.Write(toByteString(blockchain(index)))
       }
     }
-    case Tcp.Bound(address) => {
-      myPeerInfo = Some(PeerInfo.fromInetSocketAddress(id, address))
-      knownPeers.foreach { kp: PeerInfo =>
+    case Tcp.Bound(insa) => {
+      mySocketAddress = Some(insa)
+      knownPeers.foreach { kp: InetSocketAddress =>
         {
-          tcpManager ! Tcp.Connect(kp.inetSocketAddress)
+          tcpManager ! Tcp.Connect(kp)
         }
       }
     }
@@ -161,8 +159,8 @@ class BlockchainActor(var blockchain: Blockchain,
       }
     }
     case GetPeerInfo => {
-      myPeerInfo.foreach { pi =>
-        sender() ! Tcp.Write(toByteString(pi))
+      mySocketAddress.foreach { insa =>
+        sender() ! Tcp.Write(toByteString(insa))
       }
     }
     case Tcp.Received(data) => {
@@ -170,22 +168,22 @@ class BlockchainActor(var blockchain: Blockchain,
       self.!(fromByteString(data))(sender())
     }
     case GetPeers => {
-      knownPeers.foreach { peerInfo =>
+      knownPeers.foreach { insa =>
         {
-          sender() ! Tcp.Write(toByteString(peerInfo))
+          sender() ! Tcp.Write(toByteString(insa))
         }
       }
     }
-    case pi: PeerInfo => {
+    case insa: InetSocketAddress => {
       val currentConnection = sender()
-      if (!myPeerInfo.contains(pi)) {
+      if (!mySocketAddress.contains(insa)) {
         if (connectedPeers(currentConnection).isEmpty) {
-          knownPeers += pi
-          connectedPeers += (currentConnection -> Some(pi))
+          knownPeers += insa
+          connectedPeers += (currentConnection -> Some(insa))
           currentConnection ! Tcp.Write(toByteString(GetPeers))
-        } else if (!knownPeers.contains(pi)) {
-          knownPeers += pi
-          tcpManager ! Tcp.Connect(pi.inetSocketAddress)
+        } else if (!knownPeers.contains(insa)) {
+          knownPeers += insa
+          tcpManager ! Tcp.Connect(insa)
         }
       }
     }

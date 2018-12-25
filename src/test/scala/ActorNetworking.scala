@@ -1,5 +1,7 @@
 package raicoin
 
+import java.net.InetSocketAddress
+
 import akka.actor._
 import akka.io.Tcp
 import akka.testkit.TestProbe
@@ -111,11 +113,11 @@ class ActorNetworking extends FunSuiteLike {
     implicit val defaultSender = p.testActor
 
     actorC ! GetPeerInfo
-    val cInfo = tcpUnwrap[PeerInfo](p.receiveN(1).head.asInstanceOf[Tcp.Write])
+    val cAddr = tcpUnwrap[InetSocketAddress](p.receiveN(1).head.asInstanceOf[Tcp.Write])
 
     val systemD = ActorSystem("D")
     val actorD =
-      systemD.actorOf(Props(new BlockchainActor(rootOnly, tiamatPublicKey, Some(cInfo))), "D")
+      systemD.actorOf(Props(new BlockchainActor(rootOnly, tiamatPublicKey, Some(cAddr))), "D")
 
     Thread.sleep(1000)
     try {
