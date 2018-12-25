@@ -28,6 +28,12 @@ case object StopMining
 case object MineEmptyBlockIfIdle
 case object Height
 
+object SerializableInetSocketAddressImplicit {
+  implicit class SerializableINSA(insa: InetSocketAddress)
+      extends InetSocketAddress(insa.getAddress, insa.getPort)
+      with Serializable
+}
+
 object BlockchainActor {
   val BootstrapInetSocketAddr = new InetSocketAddress(InetAddress.getLocalHost, 6364)
   def fromSavedBlockchain(pathToBlockchain: String,
@@ -39,12 +45,6 @@ object BlockchainActor {
       publicKey,
       startingPeer)
   }
-}
-
-object SerializableInetSocketAddressImplicit {
-  implicit class SerializableINSA(insa: InetSocketAddress)
-      extends InetSocketAddress(insa.getAddress, insa.getPort)
-      with Serializable
 }
 
 class BlockchainActor(var blockchain: Blockchain,
