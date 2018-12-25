@@ -47,8 +47,8 @@ class PromptActor(blockchainActorRef: ActorRef, publicKey: PublicKey, privateKey
       blockchainActorRef ! Transaction(publicKey, recipient, amount).sign(privateKey)
       prompt()
     }
-    case ""     => prompt()
-    case "exit" => sys.exit(0)
+    case ""                                    => prompt()
+    case "exit"                                => sys.exit(0)
     case str if sender() == blockchainActorRef => println(str)
     case _ => {
       println("Invalid command")
