@@ -71,7 +71,7 @@ class BlockchainActor(var blockchain: Blockchain,
   val tcpManager = IO(Tcp)
 
   var promptActor: Option[ActorRef] = None
-  def logtoPrompt(str: String): Unit = {
+  def logToPrompt(str: String): Unit = {
     promptActor.foreach(_ ! str)
   }
 
@@ -146,7 +146,7 @@ class BlockchainActor(var blockchain: Blockchain,
       }
     }
     case Tcp.Bound(insa) => {
-      logtoPrompt(s"bound to $insa")
+      logToPrompt(s"bound to $insa")
       mySocketAddress = Some(insa)
       knownPeers.foreach { kp: InetSocketAddress =>
         {
@@ -155,7 +155,7 @@ class BlockchainActor(var blockchain: Blockchain,
       }
     }
     case Tcp.Connected(remoteAddress, _) => {
-      logtoPrompt(s"connected to $remoteAddress")
+      logToPrompt(s"connected to $remoteAddress")
       val peerRef = sender()
 
       peerRef ! Tcp.Register(context.self)
@@ -191,7 +191,7 @@ class BlockchainActor(var blockchain: Blockchain,
           connectedPeers += (currentConnection -> Some(insa))
           currentConnection ! Tcp.Write(toByteString(GetPeers))
         } else if (!knownPeers.contains(insa)) {
-          logtoPrompt(s"new peer: $insa")
+          logToPrompt(s"new peer: $insa")
           knownPeers += insa
           tcpManager ! Tcp.Connect(insa)
         }
