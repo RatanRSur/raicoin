@@ -25,7 +25,7 @@ object Raicoin {
     }
     println("Public Private Key Pair")
     println("[G]enerate or [P]rovide as file?")
-    val keyGenerationNeeded = "Gg".contains(readCharOneOf("GgPp"))
+    val keyGenerationNeeded = readCharOneOf("gp") == 'g'
     val (privateKey, publicKey) = if (keyGenerationNeeded) {
       val (privKey, pubKey): (PrivateKey, PublicKey) = Curve25519.createKeyPair
       print("Directory to save raicoin.pub, raicoin.priv: ")
@@ -42,7 +42,7 @@ object Raicoin {
 
     val system = ActorSystem()
     println("[L]oad existing chain, [R]etrieve from network?")
-    val chainLoadingNeeded = "Ll".contains(readCharOneOf("LlRr"))
+    val chainLoadingNeeded = readCharOneOf("lr") == 'l'
     val blockchainActorRef = if (chainLoadingNeeded) {
       print("Directory where raicoin.chain is saved: ")
       val directory = readDirectory()
@@ -71,7 +71,7 @@ object Raicoin {
   }
 
   def readCharOneOf(validChars: String): Char = {
-    val keypress = readChar()
+    val keypress = readChar().toLower
     if (validChars.contains(keypress)) keypress
     else {
       println(s"Invalid choice. Choose one of: [$validChars]")
