@@ -37,7 +37,8 @@ object SerializableInetSocketAddressImplicit {
 }
 
 object BlockchainActor {
-  val BootstrapInetSocketAddr = new InetSocketAddress(InetAddress.getLocalHost, 6364)
+  val BootstrapInetSocketAddr =
+    new InetSocketAddress(NetworkInterfaces.nonLoopbackInetAddress, 6364)
   def fromSavedBlockchain(pathToBlockchain: String,
                           publicKey: PublicKey,
                           startingPeer: Option[InetSocketAddress] = Some(
