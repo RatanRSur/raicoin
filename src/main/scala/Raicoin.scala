@@ -36,7 +36,7 @@ object Raicoin {
       FileUtils.writeByteArrayToFile(publicKeyFile, pubKey)
       (privKey, pubKey)
     } else {
-      loadPrivateAndPublicKey(readDirectory())
+      loadPrivateAndPublicKey()
     }
 
     val system = ActorSystem()
@@ -69,8 +69,9 @@ object Raicoin {
     } else inputWithPathSep
   }
 
-  def loadPrivateAndPublicKey(directoryName: => String): (PrivateKey, PublicKey) = {
+  def loadPrivateAndPublicKey(): (PrivateKey, PublicKey) = {
     print(s"Directory where $privateKeyName and $publicKeyName are saved: ")
+    val directoryName = readDirectory()
     try {
       (FileUtils
          .readFileToByteArray(new File(directoryName, privateKeyName))
@@ -81,13 +82,17 @@ object Raicoin {
     } catch {
       case fnfe: java.io.FileNotFoundException => {
         println(fnfe.getMessage)
-        loadPrivateAndPublicKey(directoryName)
+        loadPrivateAndPublicKey()
       }
     }
   }
 
   def readCharOneOf(validChars: String): Char = {
-    val keypress = readChar().toLower
+    val keypress = try {
+      readChar().toLower
+    } catch {
+      case eofe: java.io.EOFException => sys.exit(0)
+    }
     if (validChars.contains(keypress)) keypress
     else {
       println(s"Invalid choice. Choose one of: [$validChars]")
