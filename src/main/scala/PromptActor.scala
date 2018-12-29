@@ -24,10 +24,20 @@ class PromptActor(blockchainActorRef: ActorRef, publicKey: PublicKey, privateKey
     }
 
     case balance: String if balance.startsWith("balance") => {
-      val tokens  = balance.split(" ")
-      val account = Try(PublicKey(decodeHex(tokens(1)))).getOrElse(publicKey)
-      blockchainActorRef ! GetBalance(account)
-      become(awaitingResponse)
+      val tokens = balance.split(" ")
+      try {
+        val account = if (tokens.length > 1) {
+          PublicKey(decodeHex(tokens(1)))
+        } else {
+          publicKey
+        }
+        blockchainActorRef ! GetBalance(account)
+        become(awaitingResponse)
+      } catch {
+        case de: org.apache.commons.codec.DecoderException =>
+          println(s"Invalid public key. ${de.getMessage}")
+          prompt()
+      }
     }
 
     case "mining start" => {
@@ -40,11 +50,15 @@ class PromptActor(blockchainActorRef: ActorRef, publicKey: PublicKey, privateKey
     }
 
     case transfer: String if transfer.startsWith("send") => {
-      val tokens    = transfer.split(" ")
-      val recipient = PublicKey(decodeHex(tokens(1)))
-      val amount    = tokens(2).toInt
-      assert(Transaction(publicKey, recipient, amount).sign(privateKey).verify)
-      blockchainActorRef ! Transaction(publicKey, recipient, amount).sign(privateKey)
+      val tokens = transfer.split(" ")
+      try {
+        val recipient = PublicKey(decodeHex(tokens(1)))
+        val amount    = tokens(2).toInt
+        assert(Transaction(publicKey, recipient, amount).sign(privateKey).verify)
+        blockchainActorRef ! Transaction(publicKey, recipient, amount).sign(privateKey)
+      } catch {
+        case ioobe: IndexOutOfBoundsException => println("Invalid input.\nsend PUBLICKEY AMOUNT")
+      }
       prompt()
     }
     case ""                                    => prompt()
