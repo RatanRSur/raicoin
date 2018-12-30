@@ -12,7 +12,8 @@ lazy val root = (project in file(".")).settings(
     "commons-codec"        % "commons-codec" % "1.11",
     "org.scorexfoundation" %% "scrypto"      % "2.1.2",
     "org.apache.commons"   % "commons-lang3" % "3.8.1",
-    "commons-io"           % "commons-io"    % "2.6"
+    "commons-io"           % "commons-io"    % "2.6",
+    "com.github.scopt" %% "scopt" % "4.0.0-RC2"
   ),
   scalacOptions ++= Seq("-feature", "-deprecation"),
   parallelExecution in Test := false,

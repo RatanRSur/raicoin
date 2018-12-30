@@ -37,23 +37,17 @@ object SerializableInetSocketAddressImplicit {
 }
 
 object BlockchainActor {
-  val BootstrapInetSocketAddr =
-    new InetSocketAddress(NetworkInterfaces.nonLoopbackInetAddress, 6364)
-  def fromSavedBlockchain(pathToBlockchain: String,
-                          publicKey: PublicKey,
-                          startingPeer: Option[InetSocketAddress] = Some(
-                            BlockchainActor.BootstrapInetSocketAddr)): BlockchainActor = {
+  def BootstrapInetSocketAddr(implicit config: Config) =
+    new InetSocketAddress(config.bootstrapAddress, 6364)
+  def fromSavedBlockchain(pathToBlockchain: String, publicKey: PublicKey)(
+      implicit config: Config): BlockchainActor = {
     new BlockchainActor(
       deserialize(FileUtils.readFileToByteArray(Paths.get(pathToBlockchain).toFile)),
-      publicKey,
-      startingPeer)
+      publicKey)
   }
 }
 
-class BlockchainActor(var blockchain: Blockchain,
-                      publicKey: PublicKey,
-                      val startingPeer: Option[InetSocketAddress] = Some(
-                        BlockchainActor.BootstrapInetSocketAddr))
+class BlockchainActor(var blockchain: Blockchain, publicKey: PublicKey)(implicit config: Config)
     extends Actor {
 
   import BlockchainActor._
@@ -76,12 +70,12 @@ class BlockchainActor(var blockchain: Blockchain,
     promptActor.foreach(_ ! str)
   }
 
-  startingPeer match {
-    case Some(sp) => {
-      knownPeers += sp
-      tcpManager ! Tcp.Bind(self, new InetSocketAddress("localhost", 0))
+  config.startingPeers match {
+    case peers: Seq[InetAddress] => {
+      peers.foreach(peer => knownPeers += new InetSocketAddress(peer, 6363))
+      tcpManager ! Tcp.Bind(self, config.listeningSocketAddress)
     }
-    case None => tcpManager ! Tcp.Bind(self, BootstrapInetSocketAddr)
+    case Nil => tcpManager ! Tcp.Bind(self, BootstrapInetSocketAddr)
   }
 
   def mineSignedTransaction(st: SignedTransaction) = {

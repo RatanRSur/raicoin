@@ -8,11 +8,18 @@ import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import java.io.File
 import java.nio.file.Paths
+import java.net.{InetAddress, InetSocketAddress}
 import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
 import scala.concurrent.duration._
 import scala.concurrent.Await
+
+case class Config(listenOnly: Boolean = false,
+                  bootstrapAddress: InetAddress = InetAddress.getLocalHost,
+                  startingPeers: Seq[InetAddress] = Seq(),
+                  listeningSocketAddress: InetSocketAddress =
+                    new InetSocketAddress(NetworkInterfaces.nonLoopbackInetAddress, 6363))
 
 object Raicoin {
   val keyBasename    = "raicoin"
@@ -20,9 +27,8 @@ object Raicoin {
   val publicKeyName  = s"$keyBasename.pub"
 
   def main(args: Array[String]): Unit = {
-    if (!args.contains("-q")) {
-      println(asciiArt)
-    }
+    implicit val config = parseOptions(args)
+
     println("Public Private Key Pair")
     println("[G]enerate or [P]rovide as file?")
     val keyGenerationNeeded = readCharOneOf("gp") == 'g'
@@ -57,6 +63,26 @@ object Raicoin {
     }
 
     system.actorOf(Props(new PromptActor(blockchainActorRef, publicKey, privateKey)))
+  }
+
+  def parseOptions(args: Array[String]): Config = {
+    import scopt.OParser
+    val builder = OParser.builder[Config]
+    val parser = {
+      import builder._
+      OParser.sequence(
+        programName("raicoin"),
+        opt[Unit]("listen-only")
+          .action((_, c) => c.copy(listenOnly = true)),
+        opt[InetAddress]("bootstrap")
+          .valueName("<address>")
+          .action((x, c) => c.copy(bootstrapAddress = x))
+      )
+    }
+
+    OParser.parse(parser, args, Config()).getOrElse {
+      sys.exit(1)
+    }
   }
 
   def readDirectory(): String = {
