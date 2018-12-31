@@ -58,21 +58,21 @@ object Raicoin {
     }
 
     val system = ActorSystem()
-    println("[L]oad existing chain, [R]etrieve from network, [C]reate new chain?")
-    val blockchainActorRef = readCharOneOf("lrc") match {
-      case 'l' => {
-        print("Directory where raicoin.chain is saved: ")
-        system.actorOf(
-          Props(BlockchainActor.fromSavedBlockchain("raicoin.chain", privateKey, publicKey)))
-      }
-      case 'r' => {
-        system.actorOf(Props(new BlockchainActor(new Blockchain(), privateKey, publicKey)))
-      }
-      case 'c' => {
-        system.actorOf(Props(new BlockchainActor(new Blockchain(), privateKey, publicKey)))
+    val blockchainActorProps = if (config.bootstrap) {
+      Props(new BlockchainActor(new Blockchain(), privateKey, publicKey))
+    } else {
+      println("[L]oad existing chain, [R]eceive the chain over the network")
+      readCharOneOf("lr") match {
+        case 'l' => {
+          Props(BlockchainActor.fromSavedBlockchain("raicoin.chain", privateKey, publicKey))
+        }
+        case 'r' => {
+          Props(new BlockchainActor(new Blockchain(), privateKey, publicKey))
+        }
       }
     }
 
+    val blockchainActorRef = system.actorOf(blockchainActorProps)
     system.actorOf(Props(new PromptActor(blockchainActorRef, privateKey, publicKey)))
   }
 
