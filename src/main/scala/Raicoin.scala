@@ -48,8 +48,7 @@ object Raicoin {
       case Nil => {
         println("No private/public key pair provided. Generating")
         val (privKey, pubKey): (PrivateKey, PublicKey) = Curve25519.createKeyPair
-        print(s"Directory to save $publicKeyName, $privateKeyName: ")
-        val directory = readDirectory()
+        val directory                                  = "."
         val (privateKeyFile, publicKeyFile) =
           (new File(directory, privateKeyName), new File(directory, publicKeyName))
         FileUtils.writeByteArrayToFile(privateKeyFile, privKey)
@@ -63,9 +62,8 @@ object Raicoin {
     val blockchainActorRef = readCharOneOf("lrc") match {
       case 'l' => {
         print("Directory where raicoin.chain is saved: ")
-        val directory = readDirectory()
-        system.actorOf(Props(
-          BlockchainActor.fromSavedBlockchain(directory + "raicoin.chain", privateKey, publicKey)))
+        system.actorOf(
+          Props(BlockchainActor.fromSavedBlockchain("raicoin.chain", privateKey, publicKey)))
       }
       case 'r' => {
         system.actorOf(Props(new BlockchainActor(new Blockchain(), privateKey, publicKey)))
@@ -95,34 +93,6 @@ object Raicoin {
 
     OParser.parse(parser, args, Config()).getOrElse {
       sys.exit(1)
-    }
-  }
-
-  def readDirectory(): String = {
-    val pathSep          = Option(System.getProperty("file.separator")).get
-    val inputWithPathSep = Option(readLine()).getOrElse(sys.exit(1)).stripSuffix(pathSep) + pathSep
-
-    /*expand home dir if needed*/
-    if (inputWithPathSep.startsWith("~/")) {
-      Option(System.getProperty("user.home")).get + inputWithPathSep.stripPrefix("~")
-    } else inputWithPathSep
-  }
-
-  def loadPrivateAndPublicKey(): (PrivateKey, PublicKey) = {
-    print(s"Directory where $privateKeyName and $publicKeyName are saved: ")
-    val directoryName = readDirectory()
-    try {
-      (FileUtils
-         .readFileToByteArray(new File(directoryName, privateKeyName))
-         .asInstanceOf[PrivateKey],
-       FileUtils
-         .readFileToByteArray(new File(directoryName, privateKeyName))
-         .asInstanceOf[PublicKey])
-    } catch {
-      case fnfe: java.io.FileNotFoundException => {
-        println(fnfe.getMessage)
-        loadPrivateAndPublicKey()
-      }
     }
   }
 
