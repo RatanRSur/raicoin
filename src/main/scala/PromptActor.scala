@@ -6,7 +6,7 @@ import org.apache.commons.codec.binary.Hex._
 import scala.io.StdIn._
 import scala.util.Try
 
-class PromptActor(blockchainActorRef: ActorRef, publicKey: PublicKey, privateKey: PrivateKey)
+class PromptActor(blockchainActorRef: ActorRef, privateKey: PrivateKey, publicKey: PublicKey)
     extends Actor {
 
   import context._

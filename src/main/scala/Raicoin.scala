@@ -15,11 +15,11 @@ import akka.util.Timeout
 import scala.concurrent.duration._
 import scala.concurrent.Await
 
-case class Config(listenOnly: Boolean = false,
-                  bootstrapAddress: InetAddress = InetAddress.getLocalHost,
+case class Config(bootstrap: Boolean = false,
                   startingPeers: Seq[InetAddress] = Seq(),
                   listeningSocketAddress: InetSocketAddress =
-                    new InetSocketAddress(NetworkInterfaces.nonLoopbackInetAddress, 6363))
+                    new InetSocketAddress(NetworkInterfaces.nonLoopbackInetAddress, 6363),
+                  keyFiles: Seq[File] = Seq())
 
 object Raicoin {
   val keyBasename    = "raicoin"
@@ -29,20 +29,33 @@ object Raicoin {
   def main(args: Array[String]): Unit = {
     implicit val config = parseOptions(args)
 
-    println("Public Private Key Pair")
-    println("[G]enerate or [P]rovide as file?")
-    val keyGenerationNeeded = readCharOneOf("gp") == 'g'
-    val (privateKey, publicKey) = if (keyGenerationNeeded) {
-      val (privKey, pubKey): (PrivateKey, PublicKey) = Curve25519.createKeyPair
-      print("Directory to save raicoin.pub, raicoin.priv: ")
-      val directory = readDirectory()
-      val (privateKeyFile, publicKeyFile) =
-        (new File(directory, privateKeyName), new File(directory, publicKeyName))
-      FileUtils.writeByteArrayToFile(privateKeyFile, privKey)
-      FileUtils.writeByteArrayToFile(publicKeyFile, pubKey)
-      (privKey, pubKey)
-    } else {
-      loadPrivateAndPublicKey()
+    val (privateKey, publicKey) = config.keyFiles match {
+      case files: Seq[File] => {
+        try {
+          (FileUtils
+             .readFileToByteArray(config.keyFiles(0))
+             .asInstanceOf[PrivateKey],
+           FileUtils
+             .readFileToByteArray(config.keyFiles(1))
+             .asInstanceOf[PublicKey])
+        } catch {
+          case fnfe: java.io.FileNotFoundException => {
+            println(fnfe.getMessage)
+            sys.exit(1)
+          }
+        }
+      }
+      case Nil => {
+        println("No private/public key pair provided. Generating")
+        val (privKey, pubKey): (PrivateKey, PublicKey) = Curve25519.createKeyPair
+        print(s"Directory to save $publicKeyName, $privateKeyName: ")
+        val directory = readDirectory()
+        val (privateKeyFile, publicKeyFile) =
+          (new File(directory, privateKeyName), new File(directory, publicKeyName))
+        FileUtils.writeByteArrayToFile(privateKeyFile, privKey)
+        FileUtils.writeByteArrayToFile(publicKeyFile, pubKey)
+        (privKey, pubKey)
+      }
     }
 
     val system = ActorSystem()
@@ -51,18 +64,18 @@ object Raicoin {
       case 'l' => {
         print("Directory where raicoin.chain is saved: ")
         val directory = readDirectory()
-        system.actorOf(
-          Props(BlockchainActor.fromSavedBlockchain(directory + "raicoin.chain", publicKey)))
+        system.actorOf(Props(
+          BlockchainActor.fromSavedBlockchain(directory + "raicoin.chain", privateKey, publicKey)))
       }
       case 'r' => {
-        system.actorOf(Props(new BlockchainActor(new Blockchain(), publicKey)))
+        system.actorOf(Props(new BlockchainActor(new Blockchain(), privateKey, publicKey)))
       }
       case 'c' => {
-        system.actorOf(Props(new BlockchainActor(new Blockchain(), publicKey)))
+        system.actorOf(Props(new BlockchainActor(new Blockchain(), privateKey, publicKey)))
       }
     }
 
-    system.actorOf(Props(new PromptActor(blockchainActorRef, publicKey, privateKey)))
+    system.actorOf(Props(new PromptActor(blockchainActorRef, privateKey, publicKey)))
   }
 
   def parseOptions(args: Array[String]): Config = {
@@ -72,11 +85,11 @@ object Raicoin {
       import builder._
       OParser.sequence(
         programName("raicoin"),
-        opt[Unit]("listen-only")
-          .action((_, c) => c.copy(listenOnly = true)),
-        opt[InetAddress]("bootstrap")
-          .valueName("<address>")
-          .action((x, c) => c.copy(bootstrapAddress = x))
+        opt[Unit]("bootstrap")
+          .action((x, c) => c.copy(bootstrap = true, startingPeers = Seq())),
+        opt[Seq[File]]("key-files")
+          .valueName("<private-key-filename>,<public-key-filename>")
+          .action((x, c) => c.copy(keyFiles = x)),
       )
     }
 

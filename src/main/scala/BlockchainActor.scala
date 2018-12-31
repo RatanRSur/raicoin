@@ -37,17 +37,17 @@ object SerializableInetSocketAddressImplicit {
 }
 
 object BlockchainActor {
-  def BootstrapInetSocketAddr(implicit config: Config) =
-    new InetSocketAddress(config.bootstrapAddress, 6364)
-  def fromSavedBlockchain(pathToBlockchain: String, publicKey: PublicKey)(
+  def fromSavedBlockchain(pathToBlockchain: String, privateKey: PrivateKey, publicKey: PublicKey)(
       implicit config: Config): BlockchainActor = {
     new BlockchainActor(
       deserialize(FileUtils.readFileToByteArray(Paths.get(pathToBlockchain).toFile)),
+      privateKey,
       publicKey)
   }
 }
 
-class BlockchainActor(var blockchain: Blockchain, publicKey: PublicKey)(implicit config: Config)
+class BlockchainActor(var blockchain: Blockchain, privateKey: PrivateKey, publicKey: PublicKey)(
+    implicit config: Config)
     extends Actor {
 
   import BlockchainActor._
@@ -70,13 +70,9 @@ class BlockchainActor(var blockchain: Blockchain, publicKey: PublicKey)(implicit
     promptActor.foreach(_ ! str)
   }
 
-  config.startingPeers match {
-    case peers: Seq[InetAddress] => {
-      peers.foreach(peer => knownPeers += new InetSocketAddress(peer, 6363))
-      tcpManager ! Tcp.Bind(self, config.listeningSocketAddress)
-    }
-    case Nil => tcpManager ! Tcp.Bind(self, BootstrapInetSocketAddr)
-  }
+  config.startingPeers.foreach(peer => knownPeers += new InetSocketAddress(peer, 6363))
+
+  tcpManager ! Tcp.Bind(self, config.listeningSocketAddress)
 
   def mineSignedTransaction(st: SignedTransaction) = {
     if (!seenTransactions.contains(st.transaction) && st.verify) {
