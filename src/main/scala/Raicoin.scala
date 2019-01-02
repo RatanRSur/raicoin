@@ -52,7 +52,7 @@ object Raicoin {
         system.actorOf(Props(new BlockchainActor(new Blockchain(), publicKey)))
       }
       case 'c' => {
-        system.actorOf(Props(new BlockchainActor(new Blockchain(), publicKey, None)))
+        system.actorOf(Props(new BlockchainActor(new Blockchain(), publicKey)))
       }
     }
 
