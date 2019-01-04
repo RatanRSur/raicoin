@@ -10,6 +10,10 @@ object TestUtils {
   val (tiamatPrivateKey, tiamatPublicKey): (PrivateKey, PublicKey) = Curve25519.createKeyPair
   val (vecnaPrivateKey, vecnaPublicKey): (PrivateKey, PublicKey)   = Curve25519.createKeyPair
 
+  implicit val defaultConfig = Config(privateKey = tiamatPrivateKey, publicKey = tiamatPublicKey)
+  val vecnaConfig = Config(privateKey = vecnaPrivateKey, publicKey = vecnaPublicKey)
+  val bootstrapConfig = defaultConfig.copy(bootstrap = true)
+
   val testTransactions =
     Seq(Transaction(vecnaPublicKey, tiamatPublicKey, 1),
         Transaction(tiamatPublicKey, vecnaPublicKey, 1),

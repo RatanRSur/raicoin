@@ -6,8 +6,7 @@ import org.apache.commons.codec.binary.Hex._
 import scala.io.StdIn._
 import scala.util.Try
 
-class PromptActor(blockchainActorRef: ActorRef, privateKey: PrivateKey, publicKey: PublicKey)
-    extends Actor {
+class PromptActor(blockchainActorRef: ActorRef)(implicit config: Config) extends Actor {
 
   import context._
 
@@ -29,7 +28,7 @@ class PromptActor(blockchainActorRef: ActorRef, privateKey: PrivateKey, publicKe
         val account = if (tokens.length > 1) {
           PublicKey(decodeHex(tokens(1)))
         } else {
-          publicKey
+          config.publicKey
         }
         blockchainActorRef ! GetBalance(account)
         become(awaitingResponse)
@@ -54,8 +53,9 @@ class PromptActor(blockchainActorRef: ActorRef, privateKey: PrivateKey, publicKe
       try {
         val recipient = PublicKey(decodeHex(tokens(1)))
         val amount    = tokens(2).toInt
-        assert(Transaction(publicKey, recipient, amount).sign(privateKey).verify)
-        blockchainActorRef ! Transaction(publicKey, recipient, amount).sign(privateKey)
+        assert(Transaction(config.publicKey, recipient, amount).sign(config.privateKey).verify)
+        blockchainActorRef ! Transaction(config.publicKey, recipient, amount)
+          .sign(config.privateKey)
       } catch {
         case ioobe: IndexOutOfBoundsException => println("Invalid input.\nsend PUBLICKEY AMOUNT")
       }

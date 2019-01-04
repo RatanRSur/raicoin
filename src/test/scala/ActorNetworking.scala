@@ -17,10 +17,10 @@ class ActorNetworking extends FunSuiteLike {
 
     val systemA = ActorSystem("A")
     val actorA =
-      systemA.actorOf(Props(new BlockchainActor(length4chain, tiamatPublicKey, None)), "A")
+      systemA.actorOf(Props(new BlockchainActor(length4chain)(bootstrapConfig)), "A")
 
     val systemB = ActorSystem("B")
-    val actorB  = systemB.actorOf(Props(new BlockchainActor(rootOnly, vecnaPublicKey)), "B")
+    val actorB  = systemB.actorOf(Props(new BlockchainActor(rootOnly)(vecnaConfig)), "B")
 
     val p                      = TestProbe("p")(systemB)
     implicit val defaultSender = p.testActor
@@ -40,10 +40,10 @@ class ActorNetworking extends FunSuiteLike {
   test("not mining actor forwards transaction to peers") {
 
     val systemA = ActorSystem("A")
-    val actorA  = systemA.actorOf(Props(new BlockchainActor(rootOnly, tiamatPublicKey, None)), "A")
+    val actorA  = systemA.actorOf(Props(new BlockchainActor(rootOnly)(bootstrapConfig)), "A")
 
     val systemB = ActorSystem("B")
-    val actorB  = systemB.actorOf(Props(new BlockchainActor(rootOnly, tiamatPublicKey)), "B")
+    val actorB  = systemB.actorOf(Props(new BlockchainActor(rootOnly)), "B")
 
     val p                      = TestProbe("p")(systemA)
     implicit val defaultSender = p.testActor
@@ -70,13 +70,13 @@ class ActorNetworking extends FunSuiteLike {
 
     val systemA = ActorSystem("A")
     val actorA =
-      systemA.actorOf(Props(new BlockchainActor(length4chain, tiamatPublicKey, None)), "A")
+      systemA.actorOf(Props(new BlockchainActor(length4chain)(bootstrapConfig)), "A")
 
     val systemB = ActorSystem("B")
-    val actorB  = systemB.actorOf(Props(new BlockchainActor(length4chain, tiamatPublicKey)), "B")
+    val actorB  = systemB.actorOf(Props(new BlockchainActor(length4chain)), "B")
 
     val systemC = ActorSystem("C")
-    val actorC  = systemC.actorOf(Props(new BlockchainActor(length4chain, tiamatPublicKey)), "C")
+    val actorC  = systemC.actorOf(Props(new BlockchainActor(length4chain)), "C")
 
     val p                      = TestProbe("p")(systemC)
     implicit val defaultSender = p.testActor
@@ -97,15 +97,15 @@ class ActorNetworking extends FunSuiteLike {
   test("changes propagate through a bigger system") {
 
     val systemA = ActorSystem("A")
-    val actorA  = systemA.actorOf(Props(new BlockchainActor(rootOnly, tiamatPublicKey, None)), "A")
+    val actorA  = systemA.actorOf(Props(new BlockchainActor(rootOnly)(bootstrapConfig)), "A")
 
     val systemB = ActorSystem("B")
-    val actorB  = systemB.actorOf(Props(new BlockchainActor(length4chain, tiamatPublicKey)), "B")
+    val actorB  = systemB.actorOf(Props(new BlockchainActor(length4chain)), "B")
 
     Thread.sleep(500)
 
     val systemC = ActorSystem("C")
-    val actorC  = systemC.actorOf(Props(new BlockchainActor(rootOnly, tiamatPublicKey)), "C")
+    val actorC  = systemC.actorOf(Props(new BlockchainActor(rootOnly)), "C")
 
     Thread.sleep(500)
 
@@ -117,7 +117,7 @@ class ActorNetworking extends FunSuiteLike {
 
     val systemD = ActorSystem("D")
     val actorD =
-      systemD.actorOf(Props(new BlockchainActor(rootOnly, tiamatPublicKey, Some(cAddr))), "D")
+      systemD.actorOf(Props(new BlockchainActor(rootOnly)(defaultConfig.copy(startingPeers = Seq(cAddr)))), "D")
 
     Thread.sleep(1000)
     try {

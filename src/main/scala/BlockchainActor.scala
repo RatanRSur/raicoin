@@ -1,7 +1,7 @@
 package raicoin
 
 import java.io.File
-import java.net.{InetAddress, InetSocketAddress}
+import java.net.InetSocketAddress
 import java.nio.file.Paths
 
 import akka.actor._
@@ -37,22 +37,16 @@ object SerializableInetSocketAddressImplicit {
 }
 
 object BlockchainActor {
-  def fromSavedBlockchain(pathToBlockchain: String, privateKey: PrivateKey, publicKey: PublicKey)(
-      implicit config: Config): BlockchainActor = {
+  def fromSavedBlockchain(pathToBlockchain: String)(implicit config: Config): BlockchainActor = {
     new BlockchainActor(
-      deserialize(FileUtils.readFileToByteArray(Paths.get(pathToBlockchain).toFile)),
-      privateKey,
-      publicKey)
+      deserialize(FileUtils.readFileToByteArray(Paths.get(pathToBlockchain).toFile)))
   }
 }
 
-class BlockchainActor(var blockchain: Blockchain, privateKey: PrivateKey, publicKey: PublicKey)(
-    implicit config: Config)
-    extends Actor {
+class BlockchainActor(var blockchain: Blockchain)(implicit config: Config) extends Actor {
 
-  import BlockchainActor._
-  import context._
   import SerializableInetSocketAddressImplicit._
+  import context._
 
   var mySocketAddress: Option[InetSocketAddress] = None
   var knownPeers                                 = Set.empty[InetSocketAddress]
@@ -70,13 +64,13 @@ class BlockchainActor(var blockchain: Blockchain, privateKey: PrivateKey, public
     promptActor.foreach(_ ! str)
   }
 
-  config.startingPeers.foreach(peer => knownPeers += new InetSocketAddress(peer, 6363))
+  config.startingPeers.foreach(peer => knownPeers += peer)
 
   tcpManager ! Tcp.Bind(self, config.listeningSocketAddress)
 
   def mineSignedTransaction(st: SignedTransaction) = {
     if (!seenTransactions.contains(st.transaction) && st.verify) {
-      blockchain = blockchain.mineBlock(Seq(st), publicKey)
+      blockchain = blockchain.mineBlock(Seq(st), config.publicKey)
       seenTransactions += st.transaction
     }
   }
@@ -87,7 +81,7 @@ class BlockchainActor(var blockchain: Blockchain, privateKey: PrivateKey, public
       become(mining.orElse(receive))
     }
     case MineEmptyBlockIfIdle => {
-      blockchain = blockchain.mineBlock(Seq(), publicKey)
+      blockchain = blockchain.mineBlock(Seq(), config.publicKey)
       self ! MineEmptyBlockIfIdle
     }
   }

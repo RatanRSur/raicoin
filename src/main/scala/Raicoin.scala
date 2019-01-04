@@ -1,99 +1,30 @@
 package raicoin
 
-import scala.io.StdIn._
-import scorex.crypto._
-import scorex.crypto.signatures._
-import org.apache.commons.codec.binary.Hex._
-import org.apache.commons.io.FileUtils
-import org.apache.commons.io.FilenameUtils
-import java.io.File
-import java.nio.file.Paths
-import java.net.{InetAddress, InetSocketAddress}
 import akka.actor._
-import akka.pattern.ask
-import akka.util.Timeout
-import scala.concurrent.duration._
-import scala.concurrent.Await
 
-case class Config(bootstrap: Boolean = false,
-                  startingPeers: Seq[InetAddress] = Seq(),
-                  listeningSocketAddress: InetSocketAddress =
-                    new InetSocketAddress(NetworkInterfaces.nonLoopbackInetAddress, 6363),
-                  keyFiles: Seq[File] = Seq())
+import scala.io.StdIn._
 
 object Raicoin {
-  val keyBasename    = "raicoin"
-  val privateKeyName = s"$keyBasename.priv"
-  val publicKeyName  = s"$keyBasename.pub"
-
   def main(args: Array[String]): Unit = {
-    implicit val config = parseOptions(args)
-
-    val (privateKey, publicKey) = config.keyFiles match {
-      case files: Seq[File] => {
-        try {
-          (FileUtils
-             .readFileToByteArray(config.keyFiles(0))
-             .asInstanceOf[PrivateKey],
-           FileUtils
-             .readFileToByteArray(config.keyFiles(1))
-             .asInstanceOf[PublicKey])
-        } catch {
-          case fnfe: java.io.FileNotFoundException => {
-            println(fnfe.getMessage)
-            sys.exit(1)
-          }
-        }
-      }
-      case Nil => {
-        println("No private/public key pair provided. Generating")
-        val (privKey, pubKey): (PrivateKey, PublicKey) = Curve25519.createKeyPair
-        val directory                                  = "."
-        val (privateKeyFile, publicKeyFile) =
-          (new File(directory, privateKeyName), new File(directory, publicKeyName))
-        FileUtils.writeByteArrayToFile(privateKeyFile, privKey)
-        FileUtils.writeByteArrayToFile(publicKeyFile, pubKey)
-        (privKey, pubKey)
-      }
-    }
+    implicit val config = Config.parseOptions(args)
 
     val system = ActorSystem()
     val blockchainActorProps = if (config.bootstrap) {
-      Props(new BlockchainActor(new Blockchain(), privateKey, publicKey))
+      Props(new BlockchainActor(new Blockchain()))
     } else {
       println("[L]oad existing chain, [R]eceive the chain over the network")
       readCharOneOf("lr") match {
         case 'l' => {
-          Props(BlockchainActor.fromSavedBlockchain("raicoin.chain", privateKey, publicKey))
+          Props(BlockchainActor.fromSavedBlockchain("raicoin.chain"))
         }
         case 'r' => {
-          Props(new BlockchainActor(new Blockchain(), privateKey, publicKey))
+          Props(new BlockchainActor(new Blockchain()))
         }
       }
     }
 
     val blockchainActorRef = system.actorOf(blockchainActorProps)
-    system.actorOf(Props(new PromptActor(blockchainActorRef, privateKey, publicKey)))
-  }
-
-  def parseOptions(args: Array[String]): Config = {
-    import scopt.OParser
-    val builder = OParser.builder[Config]
-    val parser = {
-      import builder._
-      OParser.sequence(
-        programName("raicoin"),
-        opt[Unit]("bootstrap")
-          .action((x, c) => c.copy(bootstrap = true, startingPeers = Seq())),
-        opt[Seq[File]]("key-files")
-          .valueName("<private-key-filename>,<public-key-filename>")
-          .action((x, c) => c.copy(keyFiles = x)),
-      )
-    }
-
-    OParser.parse(parser, args, Config()).getOrElse {
-      sys.exit(1)
-    }
+    system.actorOf(Props(new PromptActor(blockchainActorRef)))
   }
 
   def readCharOneOf(validChars: String): Char = {
