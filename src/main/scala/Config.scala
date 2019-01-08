@@ -6,17 +6,16 @@ import java.io.File
 import org.apache.commons.codec.binary.Hex
 import org.apache.commons.io.FileUtils
 
-case class Config(bootstrap: Boolean = false,
-                  startingPeers: Seq[InetSocketAddress] = Seq(),
+case class Config(startingPeers: Seq[InetSocketAddress] = Nil,
                   listeningSocketAddress: InetSocketAddress =
                     new InetSocketAddress(NetworkInterfaces.nonLoopbackInetAddress, 6363),
                   privateKey: PrivateKey = Config.defaultPrivateKey,
                   publicKey: PublicKey = Config.defaultPublicKey) {}
 
 object Config {
-  val keyBasename    = "raicoin"
-  val privateKeyName = s"$keyBasename.priv"
-  val publicKeyName  = s"$keyBasename.pub"
+  val projectName    = "raicoin"
+  val privateKeyName = s"$projectName.priv"
+  val publicKeyName  = s"$projectName.pub"
   lazy val (generatedPrivateKey, generatedPublicKey): (PrivateKey, PublicKey) =
     Curve25519.createKeyPair
 
@@ -47,7 +46,7 @@ object Config {
       OParser.sequence(
         programName("raicoin"),
         opt[Unit]("bootstrap")
-          .action((x, c) => c.copy(bootstrap = true, startingPeers = Seq())),
+          .action((x, c) => c.copy(startingPeers = Nil)),
         opt[String]("private-key")
           .valueName("<hex encoded key or filename>")
           .action((x, c) => c.copy(privateKey = decodeKeyOrReadFromFilename[PrivateKey](x))),

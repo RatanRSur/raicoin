@@ -3,24 +3,18 @@ package raicoin
 import akka.actor._
 
 import scala.io.StdIn._
+import java.io.File
 
 object Raicoin {
   def main(args: Array[String]): Unit = {
     implicit val config = Config.parseOptions(args)
 
     val system = ActorSystem()
-    val blockchainActorProps = if (config.bootstrap) {
-      Props(new BlockchainActor(new Blockchain()))
+    val blockchainFile = new File(s"./${Config.projectName}.chain")
+    val blockchainActorProps = if (blockchainFile.exists()) {
+      Props(BlockchainActor.fromSavedBlockchain(blockchainFile))
     } else {
-      println("[L]oad existing chain, [R]eceive the chain over the network")
-      readCharOneOf("lr") match {
-        case 'l' => {
-          Props(BlockchainActor.fromSavedBlockchain("raicoin.chain"))
-        }
-        case 'r' => {
-          Props(new BlockchainActor(new Blockchain()))
-        }
-      }
+      Props(new BlockchainActor(new Blockchain()))
     }
 
     val blockchainActorRef = system.actorOf(blockchainActorProps)
