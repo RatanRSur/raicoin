@@ -13,6 +13,7 @@ object Raicoin {
     val blockchainActorProps = if (blockchainFile.exists()) {
       Props(BlockchainActor.fromSavedBlockchain(blockchainFile))
     } else {
+      println(asciiArt)
       Props(new BlockchainActor(new Blockchain()))
     }
 
