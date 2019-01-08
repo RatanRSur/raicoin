@@ -9,7 +9,6 @@ object Raicoin {
   def main(args: Array[String]): Unit = {
     implicit val config = Config.parseOptions(args)
 
-    val system = ActorSystem()
     val blockchainFile = new File(s"./${Config.projectName}.chain")
     val blockchainActorProps = if (blockchainFile.exists()) {
       Props(BlockchainActor.fromSavedBlockchain(blockchainFile))
@@ -17,6 +16,7 @@ object Raicoin {
       Props(new BlockchainActor(new Blockchain()))
     }
 
+    val system = ActorSystem()
     val blockchainActorRef = system.actorOf(blockchainActorProps)
     system.actorOf(Props(new PromptActor(blockchainActorRef)))
   }
