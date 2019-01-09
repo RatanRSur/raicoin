@@ -21,5 +21,11 @@ lazy val root = (project in file(".")).settings(
   connectInput in run := true,
   trapExit := false,
   outputStrategy := Some(StdoutOutput),
+  mainClass in assembly := Some("raicoin.Raicoin"),
+  test in assembly := {},
+  assemblyMergeStrategy in assembly := {
+      case "module-info.class" => MergeStrategy.rename
+      case x => (assemblyMergeStrategy in assembly).value(x)
+  },
   testOptions in Test += Tests.Argument("-oD")
 )
