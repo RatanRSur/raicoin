@@ -3,6 +3,8 @@ package raicoin
 import akka.actor._
 
 import scala.io.StdIn._
+import scala.concurrent.Await
+import scala.concurrent.duration._
 import java.io.File
 
 object Raicoin {
@@ -20,6 +22,7 @@ object Raicoin {
     val system = ActorSystem()
     val blockchainActorRef = system.actorOf(blockchainActorProps)
     if (!config.bootstrap) system.actorOf(Props(new PromptActor(blockchainActorRef)))
+    Await.ready(system.whenTerminated, Duration.Inf)
   }
 
   def readCharOneOf(validChars: String): Char = {
