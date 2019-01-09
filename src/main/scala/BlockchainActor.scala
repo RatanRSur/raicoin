@@ -50,7 +50,7 @@ class BlockchainActor(var blockchain: Blockchain)(implicit config: Config) exten
 
   var mySocketAddress: Option[InetSocketAddress] = None
   var knownPeers                                 = config.startingPeers.toSet
-  var connectedPeers                             = Map[ActorRef, Option[InetSocketAddress]]()
+  var connectedPeers                             = Map[ActorRef, InetSocketAddress]()
 
   var orphans          = Seq[MinedBlock]()
   var seenTransactions = Set.empty[Transaction]
@@ -144,7 +144,7 @@ class BlockchainActor(var blockchain: Blockchain)(implicit config: Config) exten
 
       peerRef ! Tcp.Register(context.self)
 
-      connectedPeers += (peerRef -> None)
+      connectedPeers += (peerRef -> remoteAddress)
       peerRef ! Tcp.Write(toByteString(GetPeerInfo))
 
       system.scheduler.schedule(0.millis, 500.millis) {
@@ -168,17 +168,10 @@ class BlockchainActor(var blockchain: Blockchain)(implicit config: Config) exten
       }
     }
     case insa: InetSocketAddress => {
-      val currentConnection = sender()
-      if (!mySocketAddress.contains(insa)) {
-        if (connectedPeers(currentConnection).isEmpty) {
-          knownPeers += insa
-          connectedPeers += (currentConnection -> Some(insa))
-          currentConnection ! Tcp.Write(toByteString(GetPeers))
-        } else if (!knownPeers.contains(insa)) {
-          logToPrompt(s"new peer: $insa")
-          knownPeers += insa
-          tcpManager ! Tcp.Connect(insa)
-        }
+      if (!mySocketAddress.contains(insa) && !knownPeers.contains(insa)) {
+        logToPrompt(s"new peer: $insa")
+        knownPeers += insa
+        tcpManager ! Tcp.Connect(insa)
       }
     }
     case Disconnect => {
