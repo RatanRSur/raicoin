@@ -49,7 +49,7 @@ class BlockchainActor(var blockchain: Blockchain)(implicit config: Config) exten
   import context._
 
   var mySocketAddress: Option[InetSocketAddress] = None
-  var knownPeers                                 = Set.empty[InetSocketAddress]
+  var knownPeers                                 = config.startingPeers.toSet
   var connectedPeers                             = Map[ActorRef, Option[InetSocketAddress]]()
 
   var orphans          = Seq[MinedBlock]()
@@ -63,8 +63,6 @@ class BlockchainActor(var blockchain: Blockchain)(implicit config: Config) exten
   def logToPrompt(str: String): Unit = {
     promptActor.foreach(_ ! str)
   }
-
-  config.startingPeers.foreach(peer => knownPeers += peer)
 
   tcpManager ! Tcp.Bind(self, config.listeningSocketAddress)
 
