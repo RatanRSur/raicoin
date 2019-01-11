@@ -5,12 +5,12 @@ services:
         build:
             context: .
             args:
-                - node_type=bootstrap
+                - runtime_args=--bootstrap
         container_name: bootstrap
 
     peer:
         build:
             context: .
             args:
-                - node_type=peer
+                - runtime_args=--non-interactive --starting-peers bootstrap
         container_name: peer

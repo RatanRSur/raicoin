@@ -12,7 +12,10 @@ class PromptActor(blockchainActorRef: ActorRef)(implicit config: Config) extends
 
   blockchainActorRef ! RegisterPrompt
 
-  def prompt(): Unit = self ! Option(readLine("> ")).getOrElse("exit").trim
+  def prompt(): Unit = {
+    if (config.interactive) self ! Option(readLine("> ")).getOrElse("exit").trim
+    else ()
+  }
 
   prompt()
 

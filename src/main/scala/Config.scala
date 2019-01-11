@@ -6,18 +6,21 @@ import java.io.File
 import org.apache.commons.codec.binary.Hex
 import org.apache.commons.io.FileUtils
 
-case class Config(bootstrap: Boolean = false,
-                  peer: Boolean = true,
-                  startingPeers: Seq[InetSocketAddress] = Nil,
-                  listeningSocketAddress: InetSocketAddress =
-                    new InetSocketAddress(NetworkInterfaces.nonLoopbackInetAddress, 6363),
-                  privateKey: PrivateKey = Config.defaultPrivateKey,
-                  publicKey: PublicKey = Config.defaultPublicKey) {}
+case class Config(
+    bootstrap: Boolean = false,
+    interactive: Boolean = true,
+    startingPeers: Seq[InetSocketAddress] = Nil,
+    listeningSocketAddress: InetSocketAddress =
+      new InetSocketAddress(NetworkInterfaces.nonLoopbackInetAddress, Config.defaultPort),
+    privateKey: PrivateKey = Config.defaultPrivateKey,
+    publicKey: PublicKey = Config.defaultPublicKey)
 
 object Config {
   val projectName    = "raicoin"
   val privateKeyName = s"$projectName.priv"
   val publicKeyName  = s"$projectName.pub"
+  val defaultPort    = 6363
+
   lazy val (generatedPrivateKey, generatedPublicKey): (PrivateKey, PublicKey) =
     Curve25519.createKeyPair
 
@@ -48,15 +51,23 @@ object Config {
       OParser.sequence(
         programName("raicoin"),
         opt[Unit]("bootstrap")
-          .action((x, c) => c.copy(bootstrap = true, peer = false, startingPeers = Nil)),
-        opt[Unit]("peer")
-          .action((x, c) => c.copy(bootstrap = false, peer = true)),
+          .action((x, c) => c.copy(bootstrap = true, interactive = false, startingPeers = Nil)),
+        opt[Unit]("non-interactive")
+          .action((x, c) => c.copy(interactive = false)),
         opt[String]("private-key")
           .valueName("<hex encoded key or filename>")
           .action((x, c) => c.copy(privateKey = decodeKeyOrReadFromFilename[PrivateKey](x))),
         opt[String]("public-key")
           .valueName("<hex encoded key or filename>")
           .action((x, c) => c.copy(publicKey = decodeKeyOrReadFromFilename[PublicKey](x))),
+        opt[String]("starting-peers")
+          .valueName("<hostname> <hostname> ...")
+          .action((x, c) => {
+            val hostnames = x.split(' ')
+            val inetSocketAddresses =
+              hostnames.map(hn => new InetSocketAddress(hn, Config.defaultPort))
+            c.copy(startingPeers = inetSocketAddresses)
+          }),
       )
     }
 
