@@ -38,8 +38,7 @@ object SerializableInetSocketAddressImplicit {
 
 object BlockchainActor {
   def fromSavedBlockchain(blockchainFile: File)(implicit config: Config): BlockchainActor = {
-    new BlockchainActor(
-      deserialize(FileUtils.readFileToByteArray(blockchainFile)))
+    new BlockchainActor(deserialize(FileUtils.readFileToByteArray(blockchainFile)))
   }
 }
 
