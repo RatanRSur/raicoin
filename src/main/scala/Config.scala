@@ -7,6 +7,7 @@ import org.apache.commons.codec.binary.Hex
 import org.apache.commons.io.FileUtils
 
 case class Config(bootstrap: Boolean = false,
+                  peer: Boolean = true,
                   startingPeers: Seq[InetSocketAddress] = Nil,
                   listeningSocketAddress: InetSocketAddress =
                     new InetSocketAddress(NetworkInterfaces.nonLoopbackInetAddress, 6363),
@@ -47,7 +48,9 @@ object Config {
       OParser.sequence(
         programName("raicoin"),
         opt[Unit]("bootstrap")
-          .action((x, c) => c.copy(bootstrap = true, startingPeers = Nil)),
+          .action((x, c) => c.copy(bootstrap = true, peer = false, startingPeers = Nil)),
+        opt[Unit]("peer")
+          .action((x, c) => c.copy(bootstrap = false, peer = true)),
         opt[String]("private-key")
           .valueName("<hex encoded key or filename>")
           .action((x, c) => c.copy(privateKey = decodeKeyOrReadFromFilename[PrivateKey](x))),

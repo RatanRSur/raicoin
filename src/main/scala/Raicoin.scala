@@ -21,7 +21,7 @@ object Raicoin {
 
     val system = ActorSystem()
     val blockchainActorRef = system.actorOf(blockchainActorProps)
-    if (!config.bootstrap) system.actorOf(Props(new PromptActor(blockchainActorRef)))
+    if (config.peer) system.actorOf(Props(new PromptActor(blockchainActorRef)))
     Await.ready(system.whenTerminated, Duration.Inf)
   }
 
