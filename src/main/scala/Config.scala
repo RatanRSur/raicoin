@@ -54,6 +54,9 @@ object Config {
         opt[String]("private-key")
           .valueName("<hex encoded key or filename>")
           .action((x, c) => c.copy(privateKey = decodeKeyOrReadFromFilename[PrivateKey](x))),
+        opt[String]("public-key")
+          .valueName("<hex encoded key or filename>")
+          .action((x, c) => c.copy(publicKey = decodeKeyOrReadFromFilename[PublicKey](x))),
       )
     }
 
