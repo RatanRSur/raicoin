@@ -1,0 +1,16 @@
+version: '3'
+services:
+
+    bootstrap:
+        build:
+            context: .
+            args:
+                - node_type=bootstrap
+        container_name: bootstrap
+
+    peer:
+        build:
+            context: .
+            args:
+                - node_type=peer
+        container_name: peer
