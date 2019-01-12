@@ -1,4 +1,4 @@
-lazy val root = (project in file(".")).settings(
+lazy val root = (project in file(".")).enablePlugins(DockerPlugin, DockerComposePlugin).settings(
   inThisBuild(
     List(
       scalaVersion := "2.12.7",
@@ -27,5 +27,18 @@ lazy val root = (project in file(".")).settings(
       case "module-info.class" => MergeStrategy.rename
       case x => (assemblyMergeStrategy in assembly).value(x)
   },
+  dockerImageCreationTask := docker.value,
+  dockerfile in docker := {
+      val artifact: File = assembly.value
+      val artifactTargetPath = "."
+
+      new Dockerfile {
+        from("openjdk:11-jre")
+        copy(artifact, artifactTargetPath)
+        env("RUNTIME_ARGS" -> "")
+        entryPoint("java", "-jar", artifactTargetPath, "${RUNTIME_ARGS}")
+      }
+  },
+  imageNames in docker := Seq(ImageName(s"${name.value}")),
   testOptions in Test += Tests.Argument("-oD")
 )

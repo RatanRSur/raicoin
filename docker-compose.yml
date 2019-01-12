@@ -2,15 +2,11 @@ version: '3'
 services:
 
     bootstrap:
-        build:
-            context: .
-            args:
-                - runtime_args=--bootstrap
-        container_name: bootstrap
+        image: raicoin
+        environment:
+            - RUNTIME_ARGS=--bootstrap
 
     peer:
-        build:
-            context: .
-            args:
-                - runtime_args=--non-interactive --starting-peers bootstrap
-        container_name: peer
+        image: raicoin
+        environment:
+            - RUNTIME_ARGS=--non-interactive --starting-peers bootstrap
