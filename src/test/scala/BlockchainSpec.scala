@@ -1,5 +1,6 @@
 package raicoin
 
+import org.apache.commons.lang3.SerializationUtils._
 import org.scalatest._
 import raicoin.Exceptions._
 import raicoin.TestUtils._
@@ -48,6 +49,12 @@ class BlockchainSpec extends FunSuite {
     assertThrows[IllegalTransactions] {
       Transaction(vecnaPublicKey, vecnaPublicKey, 1)
     }
+  }
+
+  test("blockchain roundtrips through serialization") {
+    val originals = Seq(rootOnly, length2chain, length3chain, length4chain)
+    val roundtripped = originals.map(x => deserialize[Blockchain](serialize(x)))
+    originals.zip(roundtripped).foreach{ case (orig, round) => assert(orig == round) }
   }
 
   test("hash of mined blocks begin with 0's according to difficulty") {
