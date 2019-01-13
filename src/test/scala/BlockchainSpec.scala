@@ -18,19 +18,19 @@ class BlockchainSpec extends FunSuite {
   }
 
   test("initial Blockchain no blocks and no users") {
-    assert(rootOnly.height === 1)
-    assert(rootOnly.ledger.size === 0)
+    assert(testChains(0).height === 1)
+    assert(testChains(0).ledger.size === 0)
   }
 
   test("add users") {
-    assert(length2chain.height === 2)
-    assert(length2chain.ledger.size === 2)
+    assert(testChains(1).height === 2)
+    assert(testChains(1).ledger.size === 2)
   }
 
   test("add block onto blockchain") {
-    assert(length2chain.height === 2)
-    assert(length2chain.ledger(vecnaPublicKey) === 0)
-    assert(length2chain.ledger(tiamatPublicKey) === 1)
+    assert(testChains(1).height === 2)
+    assert(testChains(1).ledger(vecnaPublicKey) === 0)
+    assert(testChains(1).ledger(tiamatPublicKey) === 1)
   }
 
   test("can't send more tokens than you have") {
@@ -41,7 +41,7 @@ class BlockchainSpec extends FunSuite {
       tx.sign(keyToSignWith)
     }
     assertThrows[IllegalTransactions] {
-      rootOnly.mineBlock(transactions, vecnaPublicKey)
+      testChains(0).mineBlock(transactions, vecnaPublicKey)
     }
   }
 
@@ -52,20 +52,21 @@ class BlockchainSpec extends FunSuite {
   }
 
   test("blockchain roundtrips through serialization") {
-    val originals = Seq(rootOnly, length2chain, length3chain, length4chain)
+    val originals    = Seq(testChains(0), testChains(1), testChains(2), testChains(3))
     val roundtripped = originals.map(x => deserialize[Blockchain](serialize(x)))
-    originals.zip(roundtripped).foreach{ case (orig, round) => assert(orig == round) }
+    originals.zip(roundtripped).foreach { case (orig, round) => assert(orig == round) }
   }
 
   test("hash of mined blocks begin with 0's according to difficulty") {
-    assert(length4chain.tail.map(_.hash).forall(_.startsWith(Seq.fill(length2chain.difficulty)(0))),
-           length4chain.toString)
+    assert(
+      testChains(3).tail.map(_.hash).forall(_.startsWith(Seq.fill(testChains(1).difficulty)(0))),
+      testChains(3).toString)
   }
 
   test("ledger access determined by value of public key, not object") {
     assert(
-      length4chain.ledger(tiamatPublicKey) ===
-        length4chain.ledger(PublicKey(tiamatPublicKey.clone())))
+      testChains(3).ledger(tiamatPublicKey) ===
+        testChains(3).ledger(PublicKey(tiamatPublicKey.clone())))
   }
 
 }

@@ -4,10 +4,10 @@ import org.apache.commons.codec.binary.Hex
 import scorex.crypto.signatures._
 
 case class Blockchain(blocksByHash: Map[String, Block] = Map(
-                   (Hex.encodeHexString(EmptyRootBlock.hash) ->
-                     EmptyRootBlock)),
-                 tips: Seq[Block] = Seq(EmptyRootBlock),
-                 val difficulty: Int = 3)
+                        (Hex.encodeHexString(EmptyRootBlock.hash) ->
+                          EmptyRootBlock)),
+                      tips: Seq[Block] = Seq(EmptyRootBlock),
+                      val difficulty: Int = 3)
     extends Iterable[Block]
     with Serializable {
 
@@ -86,5 +86,8 @@ case class Blockchain(blocksByHash: Map[String, Block] = Map(
     s"${getClass.getName} main line:\n  ${iter.take(5).mkString("\n  ")}${if (iter.hasNext) "\n  ..."
     else ""}"
   }
+
+  def mineBlock(signedTransaction: SignedTransaction, miner: PublicKey): Blockchain =
+    mineBlock(Seq(signedTransaction), miner)
 
 }

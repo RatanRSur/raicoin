@@ -4,14 +4,18 @@ import akka.io.Tcp
 import akka.testkit.TestProbe
 import raicoin.Serializer._
 import scorex.crypto.signatures._
+import java.net.InetSocketAddress
 
 object TestUtils {
 
   val (tiamatPrivateKey, tiamatPublicKey): (PrivateKey, PublicKey) = Curve25519.createKeyPair
   val (vecnaPrivateKey, vecnaPublicKey): (PrivateKey, PublicKey)   = Curve25519.createKeyPair
 
-  implicit val defaultConfig = Config(privateKey = tiamatPrivateKey, publicKey = tiamatPublicKey)
-  val vecnaConfig = Config(privateKey = vecnaPrivateKey, publicKey = vecnaPublicKey)
+  val bootstrapAddress = new InetSocketAddress("bootstrap", Config.defaultPort)
+  implicit val defaultConfig = Config(privateKey = tiamatPrivateKey,
+                                      publicKey = tiamatPublicKey,
+                                      startingPeers = Seq(bootstrapAddress))
+  val vecnaConfig     = Config(privateKey = vecnaPrivateKey, publicKey = vecnaPublicKey)
   val bootstrapConfig = defaultConfig.copy(startingPeers = Nil)
 
   val testTransactions =
@@ -23,12 +27,15 @@ object TestUtils {
           if (tx.sender == tiamatPublicKey) tiamatPrivateKey else vecnaPrivateKey
         tx.sign(keyToSignWith)
       }
+  val testTransactionsWithMiners =
+    testTransactions.zip(Seq(vecnaPublicKey, tiamatPublicKey, tiamatPublicKey))
 
-  val rootOnly = new Blockchain(difficulty = 1)
-  val length2chain =
-    rootOnly.mineBlock(Seq(testTransactions(0)), vecnaPublicKey)
-  val length3chain = length2chain.mineBlock(Seq(testTransactions(1)), tiamatPublicKey)
-  val length4chain = length3chain.mineBlock(Seq(testTransactions(2)), tiamatPublicKey)
+  val testChains = Seq
+    .iterate((0, new Blockchain(difficulty = 1)), 4) {
+      case (i, chain) =>
+        (i + 1, chain.mineBlock(testTransactionsWithMiners(i)._1, testTransactionsWithMiners(i)._2))
+    }
+    .map(_._2)
 
   def retriesOnTimeout[T](n: Int)(block: => T): T = {
     require(n >= 0)

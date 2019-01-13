@@ -17,13 +17,13 @@ class BlockchainActorSpec extends FunSuiteLike {
 
   test("adds received block to blockchain") {
     implicit val system        = ActorSystem()
-    val blockchainActor        = system.actorOf(Props(new BlockchainActor(length2chain)))
+    val blockchainActor        = system.actorOf(Props(new BlockchainActor(testChains(1))))
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
-    blockchainActor ! length3chain.tip
+    blockchainActor ! testChains(2).tip
     p.expectNoMessage(timeout)
     try {
-      length3chain.zipWithIndex.foreach {
+      testChains(2).zipWithIndex.foreach {
         case (block, i) => {
           blockchainActor ! Request(i)
           expectTcpMessage(p, block)
@@ -39,10 +39,10 @@ class BlockchainActorSpec extends FunSuiteLike {
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
 
-    val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain)))
+    val blockchainActor = system.actorOf(Props(new BlockchainActor(testChains(1))))
 
     blockchainActor ! Request(1)
-    expectTcpMessage[MinedBlock](p, length2chain.tip)
+    expectTcpMessage[MinedBlock](p, testChains(1).tip)
     system.terminate()
   }
 
@@ -51,10 +51,10 @@ class BlockchainActorSpec extends FunSuiteLike {
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
 
-    val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain)))
-    val chainA = length2chain
+    val blockchainActor = system.actorOf(Props(new BlockchainActor(testChains(1))))
+    val chainA = testChains(1)
       .mineBlock(Seq(testTransactions(1)), tiamatPublicKey)
-    val chainB = length2chain
+    val chainB = testChains(1)
       .mineBlock(Seq(testTransactions(1)), tiamatPublicKey)
       .mineBlock(Seq(testTransactions(2)), tiamatPublicKey)
 
@@ -76,14 +76,14 @@ class BlockchainActorSpec extends FunSuiteLike {
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
 
-    val blockchainActor = system.actorOf(Props(new BlockchainActor(rootOnly)))
+    val blockchainActor = system.actorOf(Props(new BlockchainActor(testChains(0))))
 
-    scala.util.Random.shuffle(0 to length4chain.height - 1).foreach { i =>
-      blockchainActor ! length4chain(i)
+    scala.util.Random.shuffle(0 to testChains(3).height - 1).foreach { i =>
+      blockchainActor ! testChains(3)(i)
     }
     blockchainActor ! Request(3)
     try {
-      expectTcpMessage(p, length4chain(3))
+      expectTcpMessage(p, testChains(3)(3))
     } finally {
       system.terminate()
     }
@@ -94,7 +94,7 @@ class BlockchainActorSpec extends FunSuiteLike {
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
 
-    val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain)))
+    val blockchainActor = system.actorOf(Props(new BlockchainActor(testChains(1))))
 
     val transaction       = Transaction(tiamatPublicKey, vecnaPublicKey, 1)
     val signedTransaction = transaction.sign(tiamatPrivateKey)
@@ -117,7 +117,7 @@ class BlockchainActorSpec extends FunSuiteLike {
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
 
-    val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain)))
+    val blockchainActor = system.actorOf(Props(new BlockchainActor(testChains(1))))
 
     val transaction        = Transaction(tiamatPublicKey, vecnaPublicKey, 1)
     val invalidTransaction = transaction.sign(vecnaPrivateKey)
@@ -136,7 +136,7 @@ class BlockchainActorSpec extends FunSuiteLike {
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
 
-    val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain)))
+    val blockchainActor = system.actorOf(Props(new BlockchainActor(testChains(1))))
 
     try {
       blockchainActor ! StartMining
@@ -163,15 +163,15 @@ class BlockchainActorSpec extends FunSuiteLike {
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
 
-    val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain)))
+    val blockchainActor = system.actorOf(Props(new BlockchainActor(testChains(1))))
 
     val transaction        = Transaction(tiamatPublicKey, vecnaPublicKey, 1)
     val invalidTransaction = transaction.sign(vecnaPrivateKey)
     val invalidBlock =
-      length2chain.mineBlock(Seq(invalidTransaction), vecnaPublicKey).tip
+      testChains(1).mineBlock(Seq(invalidTransaction), vecnaPublicKey).tip
     val validTransaction = transaction.sign(tiamatPrivateKey)
     val validBlock =
-      length2chain.mineBlock(Seq(validTransaction), vecnaPublicKey).tip
+      testChains(1).mineBlock(Seq(validTransaction), vecnaPublicKey).tip
 
     try {
       blockchainActor ! invalidBlock
@@ -190,9 +190,9 @@ class BlockchainActorSpec extends FunSuiteLike {
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
 
-    val blockchainActor = system.actorOf(Props(new BlockchainActor(length2chain)))
+    val blockchainActor = system.actorOf(Props(new BlockchainActor(testChains(1))))
 
-    val chainWithTransaction = length2chain.mineBlock(Seq(testTransactions(0)), vecnaPublicKey)
+    val chainWithTransaction = testChains(1).mineBlock(Seq(testTransactions(0)), vecnaPublicKey)
     val chainWithDuplicateTransaction =
       chainWithTransaction.mineBlock(Seq(testTransactions(0)), vecnaPublicKey)
 
@@ -216,7 +216,7 @@ class BlockchainActorSpec extends FunSuiteLike {
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
 
-    val blockchainActor = system.actorOf(Props(new BlockchainActor(rootOnly)))
+    val blockchainActor = system.actorOf(Props(new BlockchainActor(testChains(0))))
 
     try {
       blockchainActor ! StartMining
@@ -237,9 +237,9 @@ class BlockchainActorSpec extends FunSuiteLike {
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
 
-    val blockchainActor = system.actorOf(Props(new BlockchainActor(length3chain)))
+    val blockchainActor = system.actorOf(Props(new BlockchainActor(testChains(2))))
     val length4chainActor =
-      system.actorOf(Props(new BlockchainActor(length4chain)))
+      system.actorOf(Props(new BlockchainActor(testChains(3))))
 
     val savePath        = Paths.get("raicoin.chain")
     val saveDirPathName = savePath.toAbsolutePath.getParent.toString
@@ -250,7 +250,7 @@ class BlockchainActorSpec extends FunSuiteLike {
       p.expectMsg(Saved(savePath.toFile.getName))
       blockchainActor ! Load(saveDirPathName)
       blockchainActor ! Request(3)
-      expectTcpMessage(p, length4chain(3))
+      expectTcpMessage(p, testChains(3)(3))
       Await.result(system.terminate(), Duration.Inf)
     } finally {
       Files.deleteIfExists(savePath)
@@ -262,17 +262,16 @@ class BlockchainActorSpec extends FunSuiteLike {
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
 
-    val savingActor = system.actorOf(Props(new BlockchainActor(length4chain)))
+    val savingActor = system.actorOf(Props(new BlockchainActor(testChains(3))))
 
     val savePath        = Paths.get("raicoin.chain")
     val saveDirPathName = savePath.toAbsolutePath.getParent.toString
     try {
       savingActor ! Save(saveDirPathName)
       p.expectMsg(Saved(savePath.toFile.getName))
-      val loadingActor = system.actorOf(
-        Props(BlockchainActor.fromSavedBlockchain(savePath.toFile)))
+      val loadingActor = system.actorOf(Props(BlockchainActor.fromSavedBlockchain(savePath.toFile)))
       loadingActor ! Request(3)
-      expectTcpMessage(p, length4chain(3))
+      expectTcpMessage(p, testChains(3)(3))
       Await.result(system.terminate(), Duration.Inf)
     } finally {
       Files.deleteIfExists(savePath)
@@ -284,7 +283,7 @@ class BlockchainActorSpec extends FunSuiteLike {
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
 
-    val blockchainActor = system.actorOf(Props(new BlockchainActor(rootOnly)))
+    val blockchainActor = system.actorOf(Props(new BlockchainActor(testChains(0))))
 
     val savePath        = Paths.get("raicoin.chain")
     val saveDirPathName = savePath.toAbsolutePath.getParent.toString

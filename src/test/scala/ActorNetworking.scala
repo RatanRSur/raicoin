@@ -15,42 +15,38 @@ class ActorNetworking extends FunSuiteLike {
 
   test("remote actor automatically finds local actor and updates itself") {
 
-    val systemA = ActorSystem("A")
-    val actorA =
-      systemA.actorOf(Props(new BlockchainActor(length4chain)(bootstrapConfig)), "A")
+    val system = ActorSystem("B")
+    val actor  = system.actorOf(Props(new BlockchainActor(testChains(0))(vecnaConfig)), "B")
 
-    val systemB = ActorSystem("B")
-    val actorB  = systemB.actorOf(Props(new BlockchainActor(rootOnly)(vecnaConfig)), "B")
-
-    val p                      = TestProbe("p")(systemB)
+    val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
 
     Thread.sleep(1000)
     try {
       retriesOnTimeout(1) {
-        actorB ! Request(3)
-        expectTcpMessage(p, length4chain(3))
+        actor ! Request(3)
+        expectTcpMessage(p, testChains(3)(3))
       }
     } finally {
-      Seq(actorA, actorB).foreach(_ ! Disconnect)
-      Seq(systemA, systemB).foreach(system => Await.result(system.terminate(), Duration.Inf))
+      actor ! Disconnect
+      Await.result(system.terminate(), Duration.Inf)
     }
   }
 
   test("not mining actor forwards transaction to peers") {
 
     val systemA = ActorSystem("A")
-    val actorA  = systemA.actorOf(Props(new BlockchainActor(rootOnly)(bootstrapConfig)), "A")
+    val actorA  = systemA.actorOf(Props(new BlockchainActor(testChains(0))(bootstrapConfig)), "A")
 
-    val systemB = ActorSystem("B")
-    val actorB  = systemB.actorOf(Props(new BlockchainActor(rootOnly)), "B")
+    val system = ActorSystem("B")
+    val actor  = system.actorOf(Props(new BlockchainActor(testChains(0))), "B")
 
     val p                      = TestProbe("p")(systemA)
     implicit val defaultSender = p.testActor
 
     Thread.sleep(500)
     actorA ! StartMining
-    actorB ! testTransactions(1)
+    actor ! testTransactions(1)
     Thread.sleep(500)
     actorA ! RequestBlocksSince(1)
     try {
@@ -61,8 +57,8 @@ class ActorNetworking extends FunSuiteLike {
               .contains(testTransactions(1).transaction)
           }))
     } finally {
-      Seq(actorA, actorB).foreach(_ ! Disconnect)
-      Seq(systemA, systemB).foreach(system => Await.result(system.terminate(), Duration.Inf))
+      Seq(actorA, actor).foreach(_ ! Disconnect)
+      Seq(systemA, system).foreach(system => Await.result(system.terminate(), Duration.Inf))
     }
   }
 
@@ -70,13 +66,13 @@ class ActorNetworking extends FunSuiteLike {
 
     val systemA = ActorSystem("A")
     val actorA =
-      systemA.actorOf(Props(new BlockchainActor(length4chain)(bootstrapConfig)), "A")
+      systemA.actorOf(Props(new BlockchainActor(testChains(3))(bootstrapConfig)), "A")
 
-    val systemB = ActorSystem("B")
-    val actorB  = systemB.actorOf(Props(new BlockchainActor(length4chain)), "B")
+    val system = ActorSystem("B")
+    val actor  = system.actorOf(Props(new BlockchainActor(testChains(3))), "B")
 
     val systemC = ActorSystem("C")
-    val actorC  = systemC.actorOf(Props(new BlockchainActor(length4chain)), "C")
+    val actorC  = systemC.actorOf(Props(new BlockchainActor(testChains(3))), "C")
 
     val p                      = TestProbe("p")(systemC)
     implicit val defaultSender = p.testActor
@@ -88,8 +84,8 @@ class ActorNetworking extends FunSuiteLike {
         p.receiveN(2)
       }
     } finally {
-      Seq(actorA, actorB, actorC).foreach(_ ! Disconnect)
-      Seq(systemA, systemB, systemC).foreach(system =>
+      Seq(actorA, actor, actorC).foreach(_ ! Disconnect)
+      Seq(systemA, system, systemC).foreach(system =>
         Await.result(system.terminate(), Duration.Inf))
     }
   }
@@ -97,15 +93,15 @@ class ActorNetworking extends FunSuiteLike {
   test("changes propagate through a bigger system") {
 
     val systemA = ActorSystem("A")
-    val actorA  = systemA.actorOf(Props(new BlockchainActor(rootOnly)(bootstrapConfig)), "A")
+    val actorA  = systemA.actorOf(Props(new BlockchainActor(testChains(0))(bootstrapConfig)), "A")
 
-    val systemB = ActorSystem("B")
-    val actorB  = systemB.actorOf(Props(new BlockchainActor(length4chain)), "B")
+    val system = ActorSystem("B")
+    val actor  = system.actorOf(Props(new BlockchainActor(testChains(3))), "B")
 
     Thread.sleep(500)
 
     val systemC = ActorSystem("C")
-    val actorC  = systemC.actorOf(Props(new BlockchainActor(rootOnly)), "C")
+    val actorC  = systemC.actorOf(Props(new BlockchainActor(testChains(0))), "C")
 
     Thread.sleep(500)
 
@@ -117,17 +113,19 @@ class ActorNetworking extends FunSuiteLike {
 
     val systemD = ActorSystem("D")
     val actorD =
-      systemD.actorOf(Props(new BlockchainActor(rootOnly)(defaultConfig.copy(startingPeers = Seq(cAddr)))), "D")
+      systemD.actorOf(
+        Props(new BlockchainActor(testChains(0))(defaultConfig.copy(startingPeers = Seq(cAddr)))),
+        "D")
 
     Thread.sleep(1000)
     try {
       retriesOnTimeout(1) {
         actorD ! Request(3)
-        expectTcpMessage[MinedBlock](p, length4chain(3))
+        expectTcpMessage[MinedBlock](p, testChains(3)(3))
       }
     } finally {
-      Seq(actorA, actorB, actorC, actorD).foreach(_ ! Disconnect)
-      Seq(systemA, systemB, systemC, systemD).foreach(system =>
+      Seq(actorA, actor, actorC, actorD).foreach(_ ! Disconnect)
+      Seq(systemA, system, systemC, systemD).foreach(system =>
         Await.result(system.terminate(), Duration.Inf))
     }
   }
