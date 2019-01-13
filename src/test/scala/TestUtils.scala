@@ -30,10 +30,6 @@ object TestUtils {
   val length3chain = length2chain.mineBlock(Seq(testTransactions(1)), tiamatPublicKey)
   val length4chain = length3chain.mineBlock(Seq(testTransactions(2)), tiamatPublicKey)
 
-  def tcpWritten(obj: Serializable) = {
-    Tcp.Write(toByteString(obj))
-  }
-
   def retriesOnTimeout[T](n: Int)(block: => T): T = {
     require(n >= 0)
     try {
