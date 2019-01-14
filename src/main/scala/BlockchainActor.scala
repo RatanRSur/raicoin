@@ -63,7 +63,7 @@ class BlockchainActor(var blockchain: Blockchain)(implicit config: Config) exten
     promptActor.foreach(_ ! str)
   }
 
-  tcpManager ! Tcp.Bind(self, config.listeningSocketAddress)
+  if (config.bind) tcpManager ! Tcp.Bind(self, config.listeningSocketAddress)
 
   def mineSignedTransaction(st: SignedTransaction) = {
     if (!seenTransactions.contains(st.transaction) && st.verify) {

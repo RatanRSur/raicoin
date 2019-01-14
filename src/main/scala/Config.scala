@@ -9,6 +9,7 @@ import org.apache.commons.io.FileUtils
 case class Config(
     bootstrap: Boolean = false,
     interactive: Boolean = true,
+    bind: Boolean = true,
     startingPeers: Seq[InetSocketAddress] = Nil,
     listeningSocketAddress: InetSocketAddress =
       new InetSocketAddress(NetworkInterfaces.nonLoopbackInetAddress, Config.defaultPort),
