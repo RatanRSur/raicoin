@@ -15,7 +15,7 @@ object TestUtils {
   implicit val defaultConfig = Config(privateKey = tiamatPrivateKey,
                                       publicKey = tiamatPublicKey,
                                       startingPeers = Seq(bootstrapAddress))
-  val vecnaConfig     = Config(privateKey = vecnaPrivateKey, publicKey = vecnaPublicKey)
+  val vecnaConfig     = defaultConfig.copy(privateKey = vecnaPrivateKey, publicKey = vecnaPublicKey)
   val bootstrapConfig = defaultConfig.copy(startingPeers = Nil)
 
   val testTransactions =
