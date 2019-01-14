@@ -31,14 +31,16 @@ lazy val raicoin = (project in file(".")).enablePlugins(DockerPlugin, DockerComp
   },
   dockerImageCreationTask := docker.value,
   dockerfile in docker := {
-      val artifact: File = assembly.value
+      val assembledJar: File = assembly.value
+      val serializedChains: File = new File("./src/test/scala/resources/")
       val artifactTargetPath = "."
 
       new Dockerfile {
         from("openjdk:11-jre")
-        copy(artifact, artifactTargetPath)
+        copy(assembledJar, artifactTargetPath)
+        copy(serializedChains, artifactTargetPath)
         env("RUNTIME_ARGS" -> "")
-        entryPoint("java", "-jar", artifactTargetPath, "${RUNTIME_ARGS}")
+        entryPointRaw(s"java -jar ./${assembledJar.name} $${RUNTIME_ARGS}")
       }
   },
   imageNames in docker := Seq(ImageName(s"${name.value}"))
