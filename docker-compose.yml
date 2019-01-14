@@ -4,7 +4,7 @@ services:
     bootstrap:
         image: raicoin
         environment:
-            - RUNTIME_ARGS=--bootstrap
+            - RUNTIME_ARGS=--bootstrap --load length3.chain
 
     peer:
         image: raicoin

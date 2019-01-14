@@ -9,6 +9,7 @@ import org.apache.commons.io.FileUtils
 case class Config(
     bootstrap: Boolean = false,
     interactive: Boolean = true,
+    load: File = Config.chainFile,
     bind: Boolean = true,
     startingPeers: Seq[InetSocketAddress] = Nil,
     listeningSocketAddress: InetSocketAddress =
@@ -18,6 +19,8 @@ case class Config(
 
 object Config {
   val projectName    = "raicoin"
+  val chainName      = s"$projectName.chain"
+  val chainFile      = new File(s"./$chainName")
   val privateKeyName = s"$projectName.priv"
   val publicKeyName  = s"$projectName.pub"
   val defaultPort    = 6363
@@ -61,6 +64,9 @@ object Config {
         opt[String]("public-key")
           .valueName("<hex encoded key or filename>")
           .action((x, c) => c.copy(publicKey = decodeKeyOrReadFromFilename[PublicKey](x))),
+        opt[File]("load")
+          .valueName("<path to saved chain>")
+          .action((x, c) => c.copy(load = x)),
         opt[String]("starting-peers")
           .valueName("<hostname> <hostname> ...")
           .action((x, c) => {
