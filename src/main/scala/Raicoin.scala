@@ -11,9 +11,9 @@ object Raicoin {
   def main(args: Array[String]): Unit = {
     implicit val config = Config.parseOptions(args)
 
-    val blockchainFile = Config.chainFile
+    val blockchainFile = config.load
     val blockchainActorProps = if (blockchainFile.exists()) {
-      Props(BlockchainActor.fromSavedBlockchain(blockchainFile))
+      Props(BlockchainActor.fromBlockchainFile(blockchainFile))
     } else {
       println(asciiArt)
       Props(new BlockchainActor(new Blockchain()))

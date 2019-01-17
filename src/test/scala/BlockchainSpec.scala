@@ -1,12 +1,14 @@
 package raicoin
 
-import org.apache.commons.lang3.SerializationUtils._
 import org.scalatest._
 import raicoin.Exceptions._
 import raicoin.TestUtils._
 import scorex.crypto.signatures._
 
 import scala.util.Random
+
+import Serializer._
+import Serializer.RaicoinJsonProtocols._
 
 class BlockchainSpec extends FunSuite {
 

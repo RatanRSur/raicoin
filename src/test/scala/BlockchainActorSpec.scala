@@ -271,7 +271,7 @@ class BlockchainActorSpec extends FunSuiteLike {
     try {
       savingActor ! Save(saveDirPathName)
       p.expectMsg(Saved(savePath.toFile.getName))
-      val loadingActor = system.actorOf(Props(BlockchainActor.fromSavedBlockchain(savePath.toFile)))
+      val loadingActor = system.actorOf(Props(BlockchainActor.fromBlockchainFile(savePath.toFile)))
       loadingActor ! Request(3)
       expectTcpMessage(p, testChains(3)(3))
       Await.result(system.terminate(), Duration.Inf)

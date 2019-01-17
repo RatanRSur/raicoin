@@ -26,9 +26,7 @@ object HashImplicits extends Serializable {
     }
   }
 
-  implicit class HashableListMap(collection: ListMap[String, Long])
-      extends SHAHashable
-      with Serializable {
+  implicit class HashableMap(collection: Map[String, Long]) extends SHAHashable with Serializable {
     val hash: Array[Byte] = {
       val sha = MessageDigest.getInstance("SHA-256")
       collection.flatMap { case (k, v) => Seq(k.hash, v.hash) }.foreach(sha.update)

@@ -3,9 +3,10 @@ package raicoin
 import java.security.MessageDigest
 
 import akka.util.ByteString
-import org.apache.commons.lang3.SerializationUtils.serialize
 import raicoin.Exceptions._
 import scorex.crypto.signatures._
+import Serializer._
+import Serializer.RaicoinJsonProtocols._
 
 case class SignedTransaction(signature: ByteString, transaction: Transaction) {
   def verify: Boolean =
@@ -16,9 +17,9 @@ case class SignedTransaction(signature: ByteString, transaction: Transaction) {
 case class Transaction(sender: PublicKey, recipient: PublicKey, amount: Int) extends SHAHashable {
   customRequire(sender != recipient, new IllegalTransactions("sender cannot also be recipient"))
   import HashImplicits._
-  val ticks = scala.compat.Platform.currentTime
+  @transient val ticks = scala.compat.Platform.currentTime
 
-  val hash = {
+  @transient val hash = {
     val sha = MessageDigest.getInstance("SHA-256")
     Seq(sender, recipient, amount.hash).foreach(sha.update)
     sha.digest

@@ -27,13 +27,13 @@ abstract class Block extends SHAHashable with Serializable {
 }
 
 case class RootBlock(ledger: Ledger = new Ledger()) extends Block {
-  val hash = {
+  @transient val hash = {
     val sha = MessageDigest.getInstance("SHA-256")
     sha.update(ledger.hash)
     sha.digest
   }
-  val index = 0
-  override val toString: String =
+  @transient val index = 0
+  @transient override val toString: String =
     s"${getClass.getName}(hash: ${Hex.encodeHexString(hash).take(6)}...)"
 }
 
@@ -75,17 +75,18 @@ case class MinedBlock(parentHash: String,
                       nonce: Int)
     extends Block {
 
-  val transactions = signedTransactions.map(_.transaction)
+  @transient val transactions = signedTransactions.map(_.transaction)
   import BlockUtils._
   import HashImplicits._
-  val hashDependencies = Seq[SHAHashable](parentHash, ledger, signedTransactions.map(_.transaction))
+  @transient val hashDependencies =
+    Seq[SHAHashable](parentHash, ledger, signedTransactions.map(_.transaction))
 
-  val hash: Array[Byte] =
+  @transient val hash: Array[Byte] =
     hashWithNonce(MessageDigest.getInstance("SHA-256"), hashDependencies, nonce)
 
   assume(isCorrect(difficulty, hash))
 
-  override val toString: String =
+  @transient override val toString: String =
     s"${getClass.getName}(hash: ${Hex.encodeHexString(hash).take(6)}..., parentHash: ${parentHash.take(6)}...)"
 
 }

@@ -7,11 +7,13 @@ import java.nio.file.Paths
 import akka.actor._
 import akka.io.{IO, Tcp}
 import org.apache.commons.io.FileUtils
-import org.apache.commons.lang3.SerializationUtils.{deserialize, serialize}
 import raicoin.Serializer._
 import scorex.crypto.signatures._
 
 import scala.concurrent.duration._
+
+import Serializer._
+import Serializer.RaicoinJsonProtocols._
 
 case object Broadcast
 case class Request(index: Int)
@@ -37,8 +39,8 @@ object SerializableInetSocketAddressImplicit {
 }
 
 object BlockchainActor {
-  def fromSavedBlockchain(blockchainFile: File)(implicit config: Config): BlockchainActor = {
-    new BlockchainActor(deserialize(FileUtils.readFileToByteArray(blockchainFile)))
+  def fromBlockchainFile(blockchainFile: File)(implicit config: Config): BlockchainActor = {
+    new BlockchainActor(Blockchain.fromFile(blockchainFile))
   }
 }
 
@@ -184,8 +186,7 @@ class BlockchainActor(var blockchain: Blockchain)(implicit config: Config) exten
       sender() ! Saved(chainFile.getName)
     }
     case Load(directoryName) => {
-      blockchain = deserialize(
-        FileUtils.readFileToByteArray(new File(directoryName, "raicoin.chain")))
+      blockchain = Blockchain.fromFile(new File(directoryName, "raicoin.chain"))
     }
     case GetBalance(publicKey) => sender() ! Balance(publicKey, blockchain.ledger(publicKey))
     case Height                => sender() ! blockchain.height

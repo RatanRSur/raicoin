@@ -11,12 +11,24 @@ import raicoin.TestUtils._
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class ActorNetworking extends FunSuiteLike {
+import sys.process._
 
-  test("remote actor automatically finds local actor and updates itself") {
+class ActorNetworking extends fixture.FunSuiteLike with fixture.ConfigMapFixture {
 
+  test("remote actor automatically finds local actor and updates itself") { configMap =>
+    println(configMap)
+    configMap.foreach {
+      case (key, value) => println(s"key: $key, ${key.getClass}\nvalue: $value, ${value.getClass}")
+    }
+
+    val bootstrapHostnameAndPort = configMap("bootstrap:6363").toString.split(":")
+    val bootstrapInetSocketAddr =
+      new InetSocketAddress(bootstrapHostnameAndPort.head, bootstrapHostnameAndPort.last.toInt)
     val system = ActorSystem("B")
-    val actor  = system.actorOf(Props(new BlockchainActor(testChains(0))(vecnaConfig)), "B")
+    val actor = system.actorOf(Props(
+                                 new BlockchainActor(testChains(0))(
+                                   vecnaConfig.copy(startingPeers = Seq(bootstrapInetSocketAddr)))),
+                               "B")
 
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
@@ -33,8 +45,7 @@ class ActorNetworking extends FunSuiteLike {
     }
   }
 
-  test("not mining actor forwards transaction to peers") {
-
+  test("not mining actor forwards transaction to peers") { configMap =>
     val systemA = ActorSystem("A")
     val actorA  = systemA.actorOf(Props(new BlockchainActor(testChains(0))(bootstrapConfig)), "A")
 
@@ -62,8 +73,7 @@ class ActorNetworking extends FunSuiteLike {
     }
   }
 
-  test("B and C discover each other through A") {
-
+  test("B and C discover each other through A") { configMap =>
     val systemA = ActorSystem("A")
     val actorA =
       systemA.actorOf(Props(new BlockchainActor(testChains(3))(bootstrapConfig)), "A")
@@ -90,8 +100,7 @@ class ActorNetworking extends FunSuiteLike {
     }
   }
 
-  test("changes propagate through a bigger system") {
-
+  test("changes propagate through a bigger system") { configMap =>
     val systemA = ActorSystem("A")
     val actorA  = systemA.actorOf(Props(new BlockchainActor(testChains(0))(bootstrapConfig)), "A")
 

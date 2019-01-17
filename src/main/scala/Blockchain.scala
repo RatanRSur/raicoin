@@ -1,7 +1,18 @@
 package raicoin
 
+import java.io.File
+import org.apache.commons.io.FileUtils
 import org.apache.commons.codec.binary.Hex
 import scorex.crypto.signatures._
+
+import Serializer._
+import Serializer.RaicoinJsonProtocols._
+
+object Blockchain {
+  def fromFile(blockchainFile: File): Blockchain = {
+    deserialize[Blockchain](FileUtils.readFileToByteArray(blockchainFile))
+  }
+}
 
 case class Blockchain(blocksByHash: Map[String, Block] = Map(
                         (Hex.encodeHexString(EmptyRootBlock.hash) ->
@@ -11,10 +22,16 @@ case class Blockchain(blocksByHash: Map[String, Block] = Map(
     extends Iterable[Block]
     with Serializable {
 
-  val tip             = tips.head
-  val height          = tips.map(_.index).max + 1
-  def apply(idx: Int) = iterator.drop(idx).next()
-  val ledger          = tip.ledger
+  @transient val tip    = tips.head
+  @transient val height = tips.map(_.index).max + 1
+  def apply(idx: Int)   = iterator.drop(idx).next()
+  @transient val ledger = tip.ledger
+
+  @transient override val toString: String = {
+    val iter = iterator
+    s"${getClass.getName} main line:\n  ${iter.take(5).mkString("\n  ")}${if (iter.hasNext) "\n  ..."
+    else ""}"
+  }
 
   def append(minedBlock: MinedBlock): Blockchain = {
     val parentBlock = blocksByHash.get(minedBlock.parentHash)
@@ -79,12 +96,6 @@ case class Blockchain(blocksByHash: Map[String, Block] = Map(
                        signedTransactions,
                        miner,
                        difficulty).mine)
-  }
-
-  override val toString: String = {
-    val iter = iterator
-    s"${getClass.getName} main line:\n  ${iter.take(5).mkString("\n  ")}${if (iter.hasNext) "\n  ..."
-    else ""}"
   }
 
   def mineBlock(signedTransaction: SignedTransaction, miner: PublicKey): Blockchain =

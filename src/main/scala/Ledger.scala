@@ -9,7 +9,7 @@ import scorex.crypto.signatures._
 import scala.collection.immutable.ListMap
 import scala.util.Try
 
-case class Ledger(private val internalLedger: ListMap[String, Long] = ListMap.empty)
+case class Ledger(private val internalLedger: Map[String, Long] = ListMap.empty)
     extends Iterable[(PublicKey, Long)]
     with SHAHashable
     with Serializable {
@@ -33,7 +33,7 @@ case class Ledger(private val internalLedger: ListMap[String, Long] = ListMap.em
   }
 
   import HashImplicits._
-  val hash = {
+  @transient val hash = {
     val sha = MessageDigest.getInstance("SHA-256")
     sha.update(internalLedger.hash)
     sha.digest

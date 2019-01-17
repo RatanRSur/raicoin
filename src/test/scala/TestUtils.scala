@@ -5,6 +5,7 @@ import akka.testkit.TestProbe
 import raicoin.Serializer._
 import scorex.crypto.signatures._
 import java.net.InetSocketAddress
+import java.io.File
 
 object TestUtils {
 
@@ -27,15 +28,9 @@ object TestUtils {
           if (tx.sender == tiamatPublicKey) tiamatPrivateKey else vecnaPrivateKey
         tx.sign(keyToSignWith)
       }
-  val testTransactionsWithMiners =
-    testTransactions.zip(Seq(vecnaPublicKey, tiamatPublicKey, tiamatPublicKey))
 
-  val testChains = Seq
-    .iterate((0, new Blockchain(difficulty = 1)), 4) {
-      case (i, chain) =>
-        (i + 1, chain.mineBlock(testTransactionsWithMiners(i)._1, testTransactionsWithMiners(i)._2))
-    }
-    .map(_._2)
+  lazy val testChains =
+    (1 to 4).map(i => Blockchain.fromFile(new File(s"src/test/scala/resources/length$i.chain")))
 
   def retriesOnTimeout[T](n: Int)(block: => T): T = {
     require(n >= 0)
