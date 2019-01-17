@@ -3,6 +3,7 @@ lazy val commonSettings = Seq(
   version := "0.1.0-SNAPSHOT",
   scalacOptions ++= Seq("-feature", "-deprecation"),
   testOptions in Test += Tests.Argument("-oD"),
+  fork := true
 )
 
 lazy val raicoin = (project in file(".")).enablePlugins(DockerPlugin, DockerComposePlugin).settings(
@@ -19,7 +20,6 @@ lazy val raicoin = (project in file(".")).enablePlugins(DockerPlugin, DockerComp
     "com.github.scopt" %% "scopt" % "4.0.0-RC2"
   ),
   parallelExecution in Test := false,
-  fork := true,
   connectInput in run := true,
   trapExit := false,
   outputStrategy := Some(StdoutOutput),
