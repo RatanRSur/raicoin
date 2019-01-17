@@ -5,8 +5,12 @@ services:
         image: raicoin
         environment:
             - RUNTIME_ARGS=--bootstrap --load length3.chain
+        ports:
+            - "0:6363"
 
     peer:
         image: raicoin
         environment:
             - RUNTIME_ARGS=--non-interactive --starting-peers bootstrap
+        ports:
+            - "0:6363"
