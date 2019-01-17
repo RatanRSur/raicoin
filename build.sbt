@@ -17,7 +17,8 @@ lazy val raicoin = (project in file(".")).enablePlugins(DockerPlugin, DockerComp
     "org.scorexfoundation" %% "scrypto"      % "2.1.2",
     "org.apache.commons"   % "commons-lang3" % "3.8.1",
     "commons-io"           % "commons-io"    % "2.6",
-    "com.github.scopt" %% "scopt" % "4.0.0-RC2"
+    "com.github.scopt" %% "scopt" % "4.0.0-RC2",
+    "io.spray" %%  "spray-json" % "1.3.5",
   ),
   parallelExecution in Test := false,
   connectInput in run := true,
