@@ -34,7 +34,7 @@ object Serializer {
       def read(value: JsValue) =
         DefaultJsonProtocol.arrayFormat[Byte].read(value).asInstanceOf[PublicKey]
     }
-    implicit val transactionBlockProtocol       = jsonFormat3(Transaction)
+    implicit val transactionBlockProtocol       = jsonFormat4(Transaction)
     implicit val signedTransactionBlockProtocol = jsonFormat2(SignedTransaction)
     implicit val minedBlockProtocol             = jsonFormat6(MinedBlock)
     implicit object BlockJsonFormat extends RootJsonFormat[Block] {

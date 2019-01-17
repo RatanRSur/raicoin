@@ -14,10 +14,13 @@ case class SignedTransaction(signature: ByteString, transaction: Transaction) {
 
 }
 
-case class Transaction(sender: PublicKey, recipient: PublicKey, amount: Int) extends SHAHashable {
+case class Transaction(sender: PublicKey,
+                       recipient: PublicKey,
+                       amount: Int,
+                       ticks: Long = scala.compat.Platform.currentTime)
+    extends SHAHashable {
   customRequire(sender != recipient, new IllegalTransactions("sender cannot also be recipient"))
   import HashImplicits._
-  @transient val ticks = scala.compat.Platform.currentTime
 
   @transient val hash = {
     val sha = MessageDigest.getInstance("SHA-256")
