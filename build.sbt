@@ -44,7 +44,9 @@ lazy val raicoin = (project in file(".")).enablePlugins(DockerPlugin, DockerComp
         entryPointRaw(s"java -jar ./${assembledJar.name} $${RUNTIME_ARGS}")
       }
   },
-  imageNames in docker := Seq(ImageName(s"${name.value}"))
+  imageNames in docker := Seq(ImageName(s"${name.value}")),
+  composeRemoveContainersOnShutdown := true,
+  composeRemoveNetworkOnShutdown := true,
 )
 
 lazy val resourceGeneration = (project in file("resource-gen")).dependsOn(raicoin % "compile->test").settings(commonSettings)
