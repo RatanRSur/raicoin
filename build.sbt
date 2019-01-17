@@ -33,7 +33,7 @@ lazy val raicoin = (project in file(".")).enablePlugins(DockerPlugin, DockerComp
   dockerImageCreationTask := docker.value,
   dockerfile in docker := {
       val assembledJar: File = assembly.value
-      val serializedChains: File = new File("./src/test/scala/resources/")
+      val serializedChains: File = new File("src/test/scala/resources/")
       val artifactTargetPath = "."
 
       new Dockerfile {
