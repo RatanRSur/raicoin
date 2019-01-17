@@ -146,7 +146,6 @@ class BlockchainActor(var blockchain: Blockchain)(implicit config: Config) exten
       peerRef ! Tcp.Register(context.self)
 
       connectedPeers += (peerRef -> remoteAddress)
-      peerRef ! Tcp.Write(toByteString(GetPeerInfo))
 
       system.scheduler.schedule(0.millis, 500.millis) {
         peerRef ! Tcp.Write(toByteString(RequestBlocksSince(blockchain.height)))
