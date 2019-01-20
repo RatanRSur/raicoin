@@ -18,14 +18,14 @@ case class Blockchain(blocksByHash: Map[String, Block] = Map(
                         (Hex.encodeHexString(EmptyRootBlock.hash) ->
                           EmptyRootBlock)),
                       tips: Seq[Block] = Seq(EmptyRootBlock),
-                      val difficulty: Int = 3)
+                      val difficulty: Int = 2)
     extends Iterable[Block]
     with Serializable {
 
-  @transient val tip    = tips.head
-  @transient val height = tips.map(_.index).max + 1
-  def apply(idx: Int)   = iterator.drop(idx).next()
-  @transient val ledger = tip.ledger
+  def tip             = tips.head
+  def height          = tips.map(_.index).max + 1
+  def apply(idx: Int) = iterator.drop(idx).next()
+  def ledger          = tip.ledger
 
   @transient override val toString: String = {
     val iter = iterator

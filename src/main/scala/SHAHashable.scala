@@ -4,7 +4,6 @@ import java.nio.ByteBuffer
 import java.security.MessageDigest
 
 import scala.collection.SortedSet
-import scala.collection.immutable.ListMap
 
 object HashImplicits extends Serializable {
 

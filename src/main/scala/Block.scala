@@ -75,18 +75,29 @@ case class MinedBlock(parentHash: String,
                       nonce: Int)
     extends Block {
 
-  @transient val transactions = signedTransactions.map(_.transaction)
+  def transactions = signedTransactions.map(_.transaction)
   import BlockUtils._
   import HashImplicits._
-  @transient val hashDependencies =
-    Seq[SHAHashable](parentHash, ledger, signedTransactions.map(_.transaction))
+  def hashDependencies =
+    Seq[SHAHashable](parentHash, ledger, transactions)
 
   @transient val hash: Array[Byte] =
     hashWithNonce(MessageDigest.getInstance("SHA-256"), hashDependencies, nonce)
 
+  override def equals(that: Any): Boolean = {
+    that match {
+      case that: MinedBlock =>
+        transactions.zip(that.transactions).forall { case (x, y) => x == y } &&
+          ledger == that.ledger &&
+          parentHash == that.parentHash &&
+          hash.deep == that.hash.deep
+      case _ => false
+    }
+  }
+
   assume(isCorrect(difficulty, hash))
 
-  @transient override val toString: String =
+  override def toString: String =
     s"${getClass.getName}(hash: ${Hex.encodeHexString(hash).take(6)}..., parentHash: ${parentHash.take(6)}...)"
 
 }

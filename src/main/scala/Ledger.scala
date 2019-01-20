@@ -6,10 +6,10 @@ import org.apache.commons.codec.binary.Hex._
 import raicoin.Exceptions._
 import scorex.crypto.signatures._
 
-import scala.collection.immutable.ListMap
+import scala.collection.immutable.SortedMap
 import scala.util.Try
 
-case class Ledger(private val internalLedger: Map[String, Long] = ListMap.empty)
+case class Ledger(private val internalLedger: SortedMap[String, Long] = SortedMap.empty)
     extends Iterable[(PublicKey, Long)]
     with SHAHashable
     with Serializable {

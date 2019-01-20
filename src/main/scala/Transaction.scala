@@ -11,7 +11,6 @@ import Serializer.RaicoinJsonProtocols._
 case class SignedTransaction(signature: ByteString, transaction: Transaction) {
   def verify: Boolean =
     Curve25519.verify(Signature(signature.toArray), serialize(transaction), transaction.sender)
-
 }
 
 case class Transaction(sender: PublicKey,
@@ -30,7 +29,10 @@ case class Transaction(sender: PublicKey,
   override def equals(that: Any): Boolean = {
     that match {
       case that: Transaction =>
-        ticks == that.ticks && sender.deep == that.sender.deep && recipient.deep == that.recipient.deep && amount == that.amount
+        ticks == that.ticks &&
+          sender.deep == that.sender.deep &&
+          recipient.deep == that.recipient.deep &&
+          amount == that.amount
       case _ => false
     }
   }

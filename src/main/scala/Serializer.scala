@@ -1,5 +1,6 @@
 package raicoin
 
+import scala.collection.immutable.SortedMap
 import akka.util.ByteString
 import spray.json._
 import spray.json.DefaultJsonProtocol._
@@ -17,12 +18,28 @@ object Serializer {
 
   def fromByteString(x: ByteString): Any = javaDeserialize(x.toArray)
 
-  def serialize[T](x: T)(implicit writer: JsonFormat[T]): Array[Byte] =
+  def serialize[T](x: T)(implicit format: JsonFormat[T]): Array[Byte] =
     x.toJson.prettyPrint.getBytes
-  def deserialize[T](x: Array[Byte])(implicit reader: JsonFormat[T]): T =
+  def deserialize[T](x: Array[Byte])(implicit format: JsonFormat[T]): T =
     (new String(x)).parseJson.convertTo[T]
 
   object RaicoinJsonProtocols extends DefaultJsonProtocol {
+    implicit val sortedMapProtocol = new RootJsonFormat[SortedMap[String, Long]] {
+      def write(m: SortedMap[String, Long]) = JsObject {
+        m.map { field =>
+          field._1.toJson match {
+            case JsString(x) => x -> field._2.toJson
+            case x =>
+              throw new SerializationException(
+                "Map key must be formatted as JsString, not '" + x + "'")
+          }
+        }
+      }
+      def read(value: JsValue) =
+        SortedMap.empty[String, Long](Ordering.String) ++ DefaultJsonProtocol
+          .mapFormat[String, Long]
+          .read(value)
+    }
     implicit val ledgerProtocol    = jsonFormat1(Ledger)
     implicit val rootBlockProtocol = jsonFormat1(RootBlock)
     implicit val byteStringProtocol = new RootJsonFormat[ByteString] {
