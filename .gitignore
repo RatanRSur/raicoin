@@ -4,3 +4,5 @@ target
 TODO
 .ensime
 *.chain
+*.pub
+*.priv
