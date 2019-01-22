@@ -17,7 +17,7 @@ object Serializer {
     x.toJson.prettyPrint.getBytes
   def deserialize[T](x: Array[Byte])(implicit format: JsonFormat[T]): T =
     (new String(x)).parseJson.convertTo[T]
-  def typelessDeserialize(x: Array[Byte]): Any = {
+  def typelessDeserialize(x: Array[Byte]): AnyRef = {
     val json = (new String(x)).parseJson
     import RaicoinJsonProtocols._
     Stream(
