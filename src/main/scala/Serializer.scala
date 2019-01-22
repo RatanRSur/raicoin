@@ -23,12 +23,12 @@ object Serializer {
     Stream(
       sortedMapProtocol,
       ledgerProtocol,
+      minedBlockProtocol,
       rootBlockProtocol,
       byteStringProtocol,
       publicKeyProtocol,
       transactionBlockProtocol,
       signedTransactionBlockProtocol,
-      minedBlockProtocol,
       blockJsonFormat,
       blockchainProtocol,
       requestBlocksSinceProtocol,
