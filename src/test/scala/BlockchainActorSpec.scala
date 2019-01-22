@@ -285,7 +285,8 @@ class BlockchainActorSpec extends FunSuiteLike {
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
 
-    val blockchainActor = system.actorOf(Props(new BlockchainActor(new Blockchain(difficulty=1))(noBindConfig)))
+    val blockchainActor =
+      system.actorOf(Props(new BlockchainActor(new Blockchain(difficulty = 1))(noBindConfig)))
 
     val savePath        = Paths.get("raicoin.chain")
     val saveDirPathName = savePath.toAbsolutePath.getParent.toString

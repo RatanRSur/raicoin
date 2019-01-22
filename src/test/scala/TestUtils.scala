@@ -10,7 +10,7 @@ import java.io.File
 object TestUtils {
 
   val (tiamatPrivateKey, tiamatPublicKey) = Curve25519.createKeyPair(Array(0))
-  val (vecnaPrivateKey, vecnaPublicKey) = Curve25519.createKeyPair(Array(1))
+  val (vecnaPrivateKey, vecnaPublicKey)   = Curve25519.createKeyPair(Array(1))
 
   val bootstrapAddress = new InetSocketAddress("bootstrap", Config.defaultPort)
   implicit val defaultConfig = Config(privateKey = tiamatPrivateKey,
@@ -20,10 +20,11 @@ object TestUtils {
   val bootstrapConfig = defaultConfig.copy(startingPeers = Nil)
 
   val testTransactions =
-    Seq(Transaction(vecnaPublicKey, tiamatPublicKey, 1, 1548171779510L),
-        Transaction(tiamatPublicKey, vecnaPublicKey, 1, 1548171779554L),
-        Transaction(vecnaPublicKey, tiamatPublicKey, 1, 1548171779598L))
-      .map { tx =>
+    Seq(
+      Transaction(vecnaPublicKey, tiamatPublicKey, 1, 1548171779510L),
+      Transaction(tiamatPublicKey, vecnaPublicKey, 1, 1548171779554L),
+      Transaction(vecnaPublicKey, tiamatPublicKey, 1, 1548171779598L)
+    ).map { tx =>
         val keyToSignWith =
           if (tx.sender.deep == tiamatPublicKey.deep) tiamatPrivateKey else vecnaPrivateKey
         tx.sign(keyToSignWith)
