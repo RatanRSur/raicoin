@@ -25,7 +25,7 @@ object TestUtils {
         Transaction(vecnaPublicKey, tiamatPublicKey, 1, 1548171779598L))
       .map { tx =>
         val keyToSignWith =
-          if (tx.sender == tiamatPublicKey) tiamatPrivateKey else vecnaPrivateKey
+          if (tx.sender.deep == tiamatPublicKey.deep) tiamatPrivateKey else vecnaPrivateKey
         tx.sign(keyToSignWith)
       }
 

@@ -39,7 +39,7 @@ class BlockchainSpec extends FunSuite {
     val transactions = Seq(Transaction(vecnaPublicKey, tiamatPublicKey, 5),
                            Transaction(tiamatPublicKey, vecnaPublicKey, 5)).map { tx =>
       val keyToSignWith =
-        if (tx.sender == tiamatPublicKey) tiamatPrivateKey else vecnaPrivateKey
+        if (tx.sender.deep == tiamatPublicKey.deep) tiamatPrivateKey else vecnaPrivateKey
       tx.sign(keyToSignWith)
     }
     assertThrows[IllegalTransactions] {
