@@ -9,8 +9,8 @@ import java.io.File
 
 object TestUtils {
 
-  val (tiamatPrivateKey, tiamatPublicKey): (PrivateKey, PublicKey) = Curve25519.createKeyPair
-  val (vecnaPrivateKey, vecnaPublicKey): (PrivateKey, PublicKey)   = Curve25519.createKeyPair
+  val (tiamatPrivateKey, tiamatPublicKey) = Curve25519.createKeyPair(Array(0))
+  val (vecnaPrivateKey, vecnaPublicKey) = Curve25519.createKeyPair(Array(1))
 
   val bootstrapAddress = new InetSocketAddress("bootstrap", Config.defaultPort)
   implicit val defaultConfig = Config(privateKey = tiamatPrivateKey,
@@ -20,9 +20,9 @@ object TestUtils {
   val bootstrapConfig = defaultConfig.copy(startingPeers = Nil)
 
   val testTransactions =
-    Seq(Transaction(vecnaPublicKey, tiamatPublicKey, 1),
-        Transaction(tiamatPublicKey, vecnaPublicKey, 1),
-        Transaction(vecnaPublicKey, tiamatPublicKey, 1))
+    Seq(Transaction(vecnaPublicKey, tiamatPublicKey, 1, 1548171779510L),
+        Transaction(tiamatPublicKey, vecnaPublicKey, 1, 1548171779554L),
+        Transaction(vecnaPublicKey, tiamatPublicKey, 1, 1548171779598L))
       .map { tx =>
         val keyToSignWith =
           if (tx.sender == tiamatPublicKey) tiamatPrivateKey else vecnaPrivateKey
