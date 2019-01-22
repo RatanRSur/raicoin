@@ -1,27 +1,40 @@
 package raicoin
 
 import scala.collection.immutable.SortedMap
+import scala.util.Try
 import akka.util.ByteString
 import spray.json._
 import spray.json.DefaultJsonProtocol._
 import scorex.crypto.signatures._
-import org.apache.commons.lang3.SerializationUtils.{
-  serialize => javaSerialize,
-  deserialize => javaDeserialize
-}
+import java.net.InetSocketAddress
 
 object Serializer {
 
-  //def toByteString[T](x: T)(implicit writer: JsonFormat[T]): ByteString = ByteString(serialize[T](x))
-  //def fromByteString[T](x: ByteString)(implicit reader: JsonFormat[T]): Any = deserialize[T](x.toArray)
-  def toByteString(x: Serializable): ByteString = ByteString(javaSerialize(x))
-
-  def fromByteString(x: ByteString): Any = javaDeserialize(x.toArray)
+  def toByteString[T](x: T)(implicit format: JsonFormat[T]): ByteString = ByteString(serialize(x))
+  def fromByteString(x: ByteString): Any                                = typelessDeserialize(x.toArray)
 
   def serialize[T](x: T)(implicit format: JsonFormat[T]): Array[Byte] =
     x.toJson.prettyPrint.getBytes
   def deserialize[T](x: Array[Byte])(implicit format: JsonFormat[T]): T =
     (new String(x)).parseJson.convertTo[T]
+  def typelessDeserialize(x: Array[Byte]): Any = {
+    val json = (new String(x)).parseJson
+    import RaicoinJsonProtocols._
+    Stream(
+      sortedMapProtocol,
+      ledgerProtocol,
+      rootBlockProtocol,
+      byteStringProtocol,
+      publicKeyProtocol,
+      transactionBlockProtocol,
+      signedTransactionBlockProtocol,
+      minedBlockProtocol,
+      blockJsonFormat,
+      blockchainProtocol,
+      requestBlocksSinceProtocol,
+      inetSocketAddressProtocol
+    ).flatMap(format => Try(format.read(json)).toOption).head
+  }
 
   object RaicoinJsonProtocols extends DefaultJsonProtocol {
     implicit val sortedMapProtocol = new RootJsonFormat[SortedMap[String, Long]] {
@@ -54,7 +67,7 @@ object Serializer {
     implicit val transactionBlockProtocol       = jsonFormat4(Transaction)
     implicit val signedTransactionBlockProtocol = jsonFormat2(SignedTransaction)
     implicit val minedBlockProtocol             = jsonFormat6(MinedBlock)
-    implicit object BlockJsonFormat extends RootJsonFormat[Block] {
+    implicit val blockJsonFormat = new RootJsonFormat[Block] {
       def write(p: Block) = p match {
         case rb: RootBlock  => rb.toJson
         case mb: MinedBlock => mb.toJson
@@ -67,5 +80,15 @@ object Serializer {
     }
     implicit val blockchainProtocol         = jsonFormat3(Blockchain.apply)
     implicit val requestBlocksSinceProtocol = jsonFormat1(RequestBlocksSince)
+    implicit val inetSocketAddressProtocol = new RootJsonFormat[InetSocketAddress] {
+      def write(insa: InetSocketAddress) =
+        JsArray(JsString(insa.getHostName), JsNumber(insa.getPort))
+
+      def read(value: JsValue) = value match {
+        case JsArray(Vector(JsString(hostname), JsNumber(port))) =>
+          new InetSocketAddress(hostname, port.toInt)
+        case _ => deserializationError("InetSocketAddress expected")
+      }
+    }
   }
 }

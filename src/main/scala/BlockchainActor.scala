@@ -32,12 +32,6 @@ case object MineEmptyBlockIfIdle
 case object Height
 case object RegisterPrompt
 
-object SerializableInetSocketAddressImplicit {
-  implicit class SerializableINSA(insa: InetSocketAddress)
-      extends InetSocketAddress(insa.getAddress, insa.getPort)
-      with Serializable
-}
-
 object BlockchainActor {
   def fromBlockchainFile(blockchainFile: File)(implicit config: Config): BlockchainActor = {
     new BlockchainActor(Blockchain.fromFile(blockchainFile))
@@ -46,7 +40,6 @@ object BlockchainActor {
 
 class BlockchainActor(var blockchain: Blockchain)(implicit config: Config) extends Actor {
 
-  import SerializableInetSocketAddressImplicit._
   import context._
 
   var mySocketAddress: Option[InetSocketAddress] = None
