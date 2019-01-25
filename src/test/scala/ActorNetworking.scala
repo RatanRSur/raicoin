@@ -13,39 +13,32 @@ import scala.concurrent.duration._
 
 import sys.process._
 
+object DockerComposeTag extends Tag("DockerComposeTag")
+
 class ActorNetworking extends fixture.FunSuiteLike with fixture.ConfigMapFixture {
 
-  test("remote actor automatically finds local actor and updates itself") { configMap =>
-    println(configMap)
-    configMap.foreach {
-      case (key, value) => println(s"key: $key, ${key.getClass}\nvalue: $value, ${value.getClass}")
-    }
+  test("remote actor automatically finds local actor and updates itself", DockerComposeTag) {
+    configMap =>
+      val system = ActorSystem("local")
+      val actor = system.actorOf(
+        Props(new BlockchainActor(testChains(0))(dockerBootstrapAware(vecnaConfig, configMap))))
 
-    val bootstrapHostnameAndPort = configMap("bootstrap:6363").toString.split(":")
-    val bootstrapInetSocketAddr =
-      new InetSocketAddress(bootstrapHostnameAndPort.head, bootstrapHostnameAndPort.last.toInt)
-    val system = ActorSystem("B")
-    val actor = system.actorOf(Props(
-                                 new BlockchainActor(testChains(0))(
-                                   vecnaConfig.copy(startingPeers = Seq(bootstrapInetSocketAddr)))),
-                               "B")
+      val p                      = TestProbe("p")(system)
+      implicit val defaultSender = p.testActor
 
-    val p                      = TestProbe("p")(system)
-    implicit val defaultSender = p.testActor
-
-    Thread.sleep(1000)
-    try {
-      retriesOnTimeout(1) {
-        actor ! Request(3)
-        expectTcpMessage(p, testChains(3)(3))
+      Thread.sleep(1000)
+      try {
+        retriesOnTimeout(1) {
+          actor ! Request(2)
+          expectTcpMessage(p, testChains(2)(2))
+        }
+      } finally {
+        actor ! Disconnect
+        Await.result(system.terminate(), Duration.Inf)
       }
-    } finally {
-      actor ! Disconnect
-      Await.result(system.terminate(), Duration.Inf)
-    }
   }
 
-  test("not mining actor forwards transaction to peers") { configMap =>
+  ignore("not mining actor forwards transaction to peers") { configMap =>
     val systemA = ActorSystem("A")
     val actorA  = systemA.actorOf(Props(new BlockchainActor(testChains(0))(bootstrapConfig)), "A")
 
@@ -73,7 +66,7 @@ class ActorNetworking extends fixture.FunSuiteLike with fixture.ConfigMapFixture
     }
   }
 
-  test("B and C discover each other through A") { configMap =>
+  ignore("B and C discover each other through A") { configMap =>
     val systemA = ActorSystem("A")
     val actorA =
       systemA.actorOf(Props(new BlockchainActor(testChains(3))(bootstrapConfig)), "A")
@@ -100,7 +93,7 @@ class ActorNetworking extends fixture.FunSuiteLike with fixture.ConfigMapFixture
     }
   }
 
-  test("changes propagate through a bigger system") { configMap =>
+  ignore("changes propagate through a bigger system") { configMap =>
     val systemA = ActorSystem("A")
     val actorA  = systemA.actorOf(Props(new BlockchainActor(testChains(0))(bootstrapConfig)), "A")
 

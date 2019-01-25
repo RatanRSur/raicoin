@@ -47,6 +47,7 @@ lazy val raicoin = (project in file(".")).enablePlugins(DockerPlugin, DockerComp
   imageNames in docker := Seq(ImageName(s"${name.value}")),
   composeRemoveContainersOnShutdown := true,
   composeRemoveNetworkOnShutdown := true,
+  testTagsToExecute := "DockerComposeTag",
 )
 
 lazy val resourceGeneration = (project in file("resource-gen")).dependsOn(raicoin % "compile->test").settings(commonSettings)

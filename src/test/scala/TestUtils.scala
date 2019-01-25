@@ -6,6 +6,8 @@ import raicoin.Serializer._
 import scorex.crypto.signatures._
 import java.net.InetSocketAddress
 import java.io.File
+import org.scalatest.ConfigMap
+import java.net.InetAddress
 
 object TestUtils {
 
@@ -25,10 +27,10 @@ object TestUtils {
       Transaction(tiamatPublicKey, vecnaPublicKey, 1, 1548171779554L),
       Transaction(vecnaPublicKey, tiamatPublicKey, 1, 1548171779598L)
     ).map { tx =>
-        val keyToSignWith =
-          if (tx.sender.deep == tiamatPublicKey.deep) tiamatPrivateKey else vecnaPrivateKey
-        tx.sign(keyToSignWith)
-      }
+      val keyToSignWith =
+        if (tx.sender.deep == tiamatPublicKey.deep) tiamatPrivateKey else vecnaPrivateKey
+      tx.sign(keyToSignWith)
+    }
 
   lazy val testChains =
     (1 to 4).map(i => Blockchain.fromFile(new File(s"src/test/scala/resources/length$i.chain")))
@@ -56,5 +58,14 @@ object TestUtils {
   def expectTcpMessage[T](p: TestProbe, msg: Any) = {
     val tcpMessage = receiveOneTcpMessage[T](p)
     assert(msg == tcpMessage, s"Expected: ${msg.toString}\nGot: ${tcpMessage.toString}")
+  }
+
+  def dockerBootstrapAddr(configMap: ConfigMap): InetSocketAddress = {
+    val splitStringRepr = configMap("bootstrap:6363").asInstanceOf[String].split(':')
+    new InetSocketAddress(InetAddress.getByName(splitStringRepr(0)), splitStringRepr(1).toInt)
+  }
+
+  def dockerBootstrapAware(config: Config, scalatestConfigMap: ConfigMap): Config = {
+    config.copy(startingPeers = Seq(dockerBootstrapAddr(scalatestConfigMap)))
   }
 }

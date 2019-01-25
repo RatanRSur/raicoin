@@ -21,9 +21,10 @@ object Serializer {
     val json = (new String(x)).parseJson
     import RaicoinJsonProtocols._
     Stream(
+      minedBlockProtocol,
+      requestBlocksSinceProtocol,
       sortedMapProtocol,
       ledgerProtocol,
-      minedBlockProtocol,
       rootBlockProtocol,
       byteStringProtocol,
       publicKeyProtocol,
@@ -31,7 +32,6 @@ object Serializer {
       signedTransactionBlockProtocol,
       blockJsonFormat,
       blockchainProtocol,
-      requestBlocksSinceProtocol,
       inetSocketAddressProtocol
     ).flatMap(format => Try(format.read(json)).toOption).head
   }
