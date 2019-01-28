@@ -20,7 +20,6 @@ case class Request(index: Int)
 case class RequestBlocksSince(index: Int)
 case object GetPeers
 case object GetPeerInfo
-case object Disconnect
 case class Save(directoryName: String)
 case class Saved(fileName: String)
 case class Load(directoryName: String)
@@ -51,7 +50,8 @@ class BlockchainActor(var blockchain: Blockchain)(implicit config: Config) exten
 
   var myListeningAddress: Option[InetSocketAddress] = None
 
-  val tcpManager = IO(Tcp)
+  val tcpManager                  = IO(Tcp)
+  var bindActor: Option[ActorRef] = None
 
   var promptActor: Option[ActorRef] = None
   def logToPrompt(str: String): Unit = {
@@ -124,6 +124,7 @@ class BlockchainActor(var blockchain: Blockchain)(implicit config: Config) exten
     }
     case Tcp.Bound(insa) => {
       logToPrompt(s"bound to $insa")
+      bindActor = Some(sender())
       mySocketAddress = Some(insa)
       knownPeers.foreach { kp: InetSocketAddress =>
         {
@@ -167,11 +168,6 @@ class BlockchainActor(var blockchain: Blockchain)(implicit config: Config) exten
         tcpManager ! Tcp.Connect(insa)
       }
     }
-    case Disconnect => {
-      connectedPeers.keys.foreach { connection =>
-        connection ! Tcp.ConfirmedClose
-      }
-    }
     case Save(directoryName) => {
       val chainFile = new File(directoryName, "raicoin.chain")
       FileUtils.writeByteArrayToFile(chainFile, serialize(blockchain))
@@ -189,5 +185,9 @@ class BlockchainActor(var blockchain: Blockchain)(implicit config: Config) exten
     case other => {
       //println(s"Unhandled Message: ${context.system}: $other")
     }
+  }
+
+  override def postStop() = {
+    bindActor.foreach(_ ! Tcp.Unbind)
   }
 }

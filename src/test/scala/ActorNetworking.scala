@@ -33,7 +33,6 @@ class ActorNetworking extends fixture.FunSuiteLike with fixture.ConfigMapFixture
           expectTcpMessage(p, testChains(2)(2))
         }
       } finally {
-        actor ! Disconnect
         Await.result(system.terminate(), Duration.Inf)
       }
   }
@@ -61,7 +60,6 @@ class ActorNetworking extends fixture.FunSuiteLike with fixture.ConfigMapFixture
               .contains(testTransactions(1).transaction)
           }))
     } finally {
-      Seq(actorA, actor).foreach(_ ! Disconnect)
       Seq(systemA, system).foreach(system => Await.result(system.terminate(), Duration.Inf))
     }
   }
@@ -87,7 +85,7 @@ class ActorNetworking extends fixture.FunSuiteLike with fixture.ConfigMapFixture
         p.receiveN(2)
       }
     } finally {
-      Seq(actorA, actor, actorC).foreach(_ ! Disconnect)
+      //Seq(actorA, actor, actorC).foreach(_ ! Disconnect)
       Seq(systemA, system, systemC).foreach(system =>
         Await.result(system.terminate(), Duration.Inf))
     }
@@ -126,7 +124,7 @@ class ActorNetworking extends fixture.FunSuiteLike with fixture.ConfigMapFixture
         expectTcpMessage[MinedBlock](p, testChains(3)(3))
       }
     } finally {
-      Seq(actorA, actor, actorC, actorD).foreach(_ ! Disconnect)
+      //Seq(actorA, actor, actorC, actorD).foreach(_ ! Disconnect)
       Seq(systemA, system, systemC, systemD).foreach(system =>
         Await.result(system.terminate(), Duration.Inf))
     }
