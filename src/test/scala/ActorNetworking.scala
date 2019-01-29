@@ -48,7 +48,7 @@ class ActorNetworking extends fixture.FunSuiteLike with fixture.ConfigMapFixture
 
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
-    IO(Tcp) ! Tcp.Connect(dockerAddr("bootstrap-mining", configMap), timeout = Some(5.seconds))
+    IO(Tcp) ! Tcp.Connect(dockerAddr("bootstrap-mining", configMap))
     val bootstrapRef = {
       p.expectMsgType[Tcp.Connected]
       p.lastSender
