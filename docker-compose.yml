@@ -11,6 +11,6 @@ services:
     bootstrap-mining:
         image: raicoin
         environment:
-            - RUNTIME_ARGS=--bootstrap --load length3.chain --mining
+            - RUNTIME_ARGS=--bootstrap --load length3.chain --mine
         ports:
             - "0:6363"
