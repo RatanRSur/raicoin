@@ -13,8 +13,10 @@ object Serializer {
   def toByteString[T](x: T)(implicit format: JsonFormat[T]): ByteString = ByteString(serialize(x))
   def fromByteString(x: ByteString): AnyRef                             = typelessDeserialize(x.toArray)
 
-  def serialize[T](x: T)(implicit format: JsonFormat[T]): Array[Byte] =
-    x.toJson.prettyPrint.getBytes
+  def serialize[T](x: T)(implicit format: JsonFormat[T]): Array[Byte] = {
+    val EOI = '\uFFFF'
+    (x.toJson.compactPrint + EOI).getBytes
+  }
   def deserialize[T](x: Array[Byte])(implicit format: JsonFormat[T]): T =
     (new String(x)).parseJson.convertTo[T]
   def typelessDeserialize(x: Array[Byte]): AnyRef = {
