@@ -59,6 +59,7 @@ class BlockchainActor(var blockchain: Blockchain)(implicit config: Config) exten
   }
 
   if (config.bind) tcpManager ! Tcp.Bind(self, config.listeningSocketAddress)
+  if (config.mine) self ! StartMining
 
   def mineSignedTransaction(st: SignedTransaction) = {
     if (!seenTransactions.contains(st.transaction) && st.verify) {

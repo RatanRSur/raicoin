@@ -11,6 +11,7 @@ case class Config(
     interactive: Boolean = true,
     load: File = Config.chainFile,
     bind: Boolean = true,
+    mine: Boolean = false,
     startingPeers: Seq[InetSocketAddress] = Nil,
     listeningSocketAddress: InetSocketAddress =
       new InetSocketAddress(NetworkInterfaces.nonLoopbackInetAddress, Config.defaultPort),
@@ -58,6 +59,8 @@ object Config {
           .action((x, c) => c.copy(bootstrap = true, interactive = false, startingPeers = Nil)),
         opt[Unit]("non-interactive")
           .action((x, c) => c.copy(interactive = false)),
+        opt[Unit]("mine")
+          .action((x, c) => c.copy(mine = true)),
         opt[String]("private-key")
           .valueName("<hex encoded key or filename>")
           .action((x, c) => c.copy(privateKey = decodeKeyOrReadFromFilename[PrivateKey](x))),

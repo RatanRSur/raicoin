@@ -8,9 +8,9 @@ services:
         ports:
             - "0:6363"
 
-    peer:
+    bootstrap-mining:
         image: raicoin
         environment:
-            - RUNTIME_ARGS=--non-interactive --starting-peers bootstrap
+            - RUNTIME_ARGS=--bootstrap --load length3.chain --mining
         ports:
             - "0:6363"

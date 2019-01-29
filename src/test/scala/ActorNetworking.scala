@@ -3,10 +3,12 @@ package raicoin
 import java.net.InetSocketAddress
 
 import akka.actor._
-import akka.io.Tcp
+import akka.io.{IO, Tcp}
 import akka.testkit.TestProbe
 import org.scalatest._
-import raicoin.TestUtils._
+import TestUtils._
+import Serializer._
+import RaicoinJsonProtocols._
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -21,7 +23,8 @@ class ActorNetworking extends fixture.FunSuiteLike with fixture.ConfigMapFixture
     configMap =>
       val system = ActorSystem("local")
       val actor = system.actorOf(
-        Props(new BlockchainActor(testChains(0))(dockerBootstrapAware(vecnaConfig, configMap))))
+        Props(
+          new BlockchainActor(testChains(0))(dockerAddrAware("bootstrap", vecnaConfig, configMap))))
 
       val p                      = TestProbe("p")(system)
       implicit val defaultSender = p.testActor
@@ -37,21 +40,24 @@ class ActorNetworking extends fixture.FunSuiteLike with fixture.ConfigMapFixture
       }
   }
 
-  ignore("not mining actor forwards transaction to peers") { configMap =>
-    val systemA = ActorSystem("A")
-    val actorA  = systemA.actorOf(Props(new BlockchainActor(testChains(0))(bootstrapConfig)), "A")
+  test("not mining actor forwards transaction to peers", DockerComposeTag) { configMap =>
+    implicit val system = ActorSystem("local")
+    val actor = system.actorOf(
+      Props(new BlockchainActor(testChains(3))(
+        dockerAddrAware("bootstrap-mining", vecnaConfig, configMap))))
 
-    val system = ActorSystem("B")
-    val actor  = system.actorOf(Props(new BlockchainActor(testChains(0))), "B")
-
-    val p                      = TestProbe("p")(systemA)
+    val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
+    IO(Tcp) ! Tcp.Connect(dockerAddr("bootstrap-mining", configMap), timeout = Some(5.seconds))
+    val bootstrapRef = {
+      p.expectMsgType[Tcp.Connected]
+      p.lastSender
+    }
 
     Thread.sleep(500)
-    actorA ! StartMining
     actor ! testTransactions(1)
     Thread.sleep(500)
-    actorA ! RequestBlocksSince(1)
+    bootstrapRef ! Tcp.Write(toByteString(RequestBlocksSince(1)))
     try {
       assert(
         p.receiveWhile(1.seconds, 500.millis) { case msg => msg }
@@ -60,7 +66,7 @@ class ActorNetworking extends fixture.FunSuiteLike with fixture.ConfigMapFixture
               .contains(testTransactions(1).transaction)
           }))
     } finally {
-      Seq(systemA, system).foreach(system => Await.result(system.terminate(), Duration.Inf))
+      Await.result(system.terminate(), Duration.Inf)
     }
   }
 

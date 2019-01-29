@@ -60,12 +60,14 @@ object TestUtils {
     assert(msg == tcpMessage, s"Expected: ${msg.toString}\nGot: ${tcpMessage.toString}")
   }
 
-  def dockerBootstrapAddr(configMap: ConfigMap): InetSocketAddress = {
-    val splitStringRepr = configMap("bootstrap:6363").asInstanceOf[String].split(':')
+  def dockerAddr(containerName: String, configMap: ConfigMap): InetSocketAddress = {
+    val splitStringRepr = configMap(s"$containerName:6363").asInstanceOf[String].split(':')
     new InetSocketAddress(InetAddress.getByName(splitStringRepr(0)), splitStringRepr(1).toInt)
   }
 
-  def dockerBootstrapAware(config: Config, scalatestConfigMap: ConfigMap): Config = {
-    config.copy(startingPeers = Seq(dockerBootstrapAddr(scalatestConfigMap)))
+  def dockerAddrAware(containerName: String,
+                      config: Config,
+                      scalatestConfigMap: ConfigMap): Config = {
+    config.copy(startingPeers = Seq(dockerAddr(containerName, scalatestConfigMap)))
   }
 }
