@@ -11,7 +11,7 @@ import java.net.InetSocketAddress
 object Serializer {
 
   def toByteString[T](x: T)(implicit format: JsonFormat[T]): ByteString = ByteString(serialize(x))
-  def fromByteString(x: ByteString): Any                                = typelessDeserialize(x.toArray)
+  def fromByteString(x: ByteString): AnyRef                             = typelessDeserialize(x.toArray)
 
   def serialize[T](x: T)(implicit format: JsonFormat[T]): Array[Byte] =
     x.toJson.prettyPrint.getBytes
