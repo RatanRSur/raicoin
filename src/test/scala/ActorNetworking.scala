@@ -12,6 +12,7 @@ import RaicoinJsonProtocols._
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import scala.util.Try
 
 import sys.process._
 
@@ -49,21 +50,27 @@ class ActorNetworking extends fixture.FunSuiteLike with fixture.ConfigMapFixture
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
     IO(Tcp) ! Tcp.Connect(dockerAddr("bootstrap-mining", configMap))
-    val bootstrapRef = {
-      p.expectMsgType[Tcp.Connected]
-      p.lastSender
-    }
+    p.expectMsgType[Tcp.Connected]
+    val bootstrapRef = p.sender()
+
+    bootstrapRef ! Tcp.Register(p.testActor)
+
+    val testTx  = Transaction(vecnaPublicKey, tiamatPublicKey, 1)
+    val testSTx = testTx.sign(vecnaPrivateKey)
 
     Thread.sleep(500)
-    actor ! testTransactions(1)
+    actor ! testSTx
     Thread.sleep(500)
-    bootstrapRef ! Tcp.Write(toByteString(RequestBlocksSince(1)))
+    bootstrapRef ! Tcp.Write(toByteString(RequestBlocksSince(2)))
     try {
+      val requestedBlocks = p
+        .receiveWhile() { case Tcp.Received(data) => data }
+        .toStream
+        .flatMap(data => Try(deserialize[MinedBlock](data.toArray)).toOption)
       assert(
-        p.receiveWhile(1.seconds, 500.millis) { case msg => msg }
-          .exists(msg => {
-            tcpUnwrap[MinedBlock](msg.asInstanceOf[Tcp.Write]).transactions
-              .contains(testTransactions(1).transaction)
+        requestedBlocks
+          .exists(block => {
+            block.transactions.contains(testTx)
           }))
     } finally {
       Await.result(system.terminate(), Duration.Inf)
