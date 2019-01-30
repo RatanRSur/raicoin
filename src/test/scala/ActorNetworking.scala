@@ -44,12 +44,11 @@ class ActorNetworking extends fixture.FunSuiteLike with fixture.ConfigMapFixture
   test("not mining actor forwards transaction to peers", DockerComposeTag) { configMap =>
     implicit val system = ActorSystem("local")
     val actor = system.actorOf(
-      Props(new BlockchainActor(testChains(3))(
-        dockerAddrAware("bootstrap-mining", vecnaConfig, configMap))))
+      Props(new BlockchainActor(testChains(3))(dockerAddrAware("mining", vecnaConfig, configMap))))
 
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
-    IO(Tcp) ! Tcp.Connect(dockerAddr("bootstrap-mining", configMap))
+    IO(Tcp) ! Tcp.Connect(dockerAddr("mining", configMap))
     p.expectMsgType[Tcp.Connected]
     val bootstrapRef = p.sender()
 
