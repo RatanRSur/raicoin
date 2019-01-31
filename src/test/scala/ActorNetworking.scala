@@ -65,7 +65,7 @@ class ActorNetworking extends fixture.FunSuiteLike with fixture.ConfigMapFixture
       val requestedBlocks = p
         .receiveWhile() { case Tcp.Received(data) => data }
         .toStream
-        .flatMap(data => Try(deserialize[MinedBlock](data.toArray)).toOption)
+        .flatMap(data => Try(deserializeWithName(data.toArray).asInstanceOf[MinedBlock]).toOption)
       assert(
         requestedBlocks
           .exists(block => {
