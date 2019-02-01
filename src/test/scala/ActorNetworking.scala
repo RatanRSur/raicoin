@@ -97,44 +97,4 @@ class ActorNetworking extends fixture.FunSuiteLike with fixture.ConfigMapFixture
       Await.result(system.terminate(), Duration.Inf)
     }
   }
-
-  ignore("changes propagate through a bigger system") { configMap =>
-    val systemA = ActorSystem("A")
-    val actorA  = systemA.actorOf(Props(new BlockchainActor(testChains(0))(bootstrapConfig)), "A")
-
-    val system = ActorSystem("B")
-    val actor  = system.actorOf(Props(new BlockchainActor(testChains(3))), "B")
-
-    Thread.sleep(500)
-
-    val systemC = ActorSystem("C")
-    val actorC  = systemC.actorOf(Props(new BlockchainActor(testChains(0))), "C")
-
-    Thread.sleep(500)
-
-    val p                      = TestProbe("p")(systemC)
-    implicit val defaultSender = p.testActor
-
-    actorC ! GetPeerInfo
-    val cAddr = tcpUnwrap[InetSocketAddress](p.receiveN(1).head.asInstanceOf[Tcp.Write])
-
-    val systemD = ActorSystem("D")
-    val actorD =
-      systemD.actorOf(
-        Props(new BlockchainActor(testChains(0))(defaultConfig.copy(startingPeers = Seq(cAddr)))),
-        "D")
-
-    Thread.sleep(1000)
-    try {
-      retriesOnTimeout(1) {
-        actorD ! Request(3)
-        expectTcpMessage[MinedBlock](p, testChains(3)(3))
-      }
-    } finally {
-      //Seq(actorA, actor, actorC, actorD).foreach(_ ! Disconnect)
-      Seq(systemA, system, systemC, systemD).foreach(system =>
-        Await.result(system.terminate(), Duration.Inf))
-    }
-  }
-
 }
