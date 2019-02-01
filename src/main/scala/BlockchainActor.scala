@@ -144,6 +144,7 @@ class BlockchainActor(var blockchain: Blockchain)(implicit config: Config) exten
 
       system.scheduler.schedule(0.millis, 500.millis) {
         peerRef ! Tcp.Write(toByteString(RequestBlocksSince(blockchain.height)))
+        peerRef ! Tcp.Write(toByteString(GetPeers))
       }
     }
     case GetPeerInfo => {
@@ -156,7 +157,7 @@ class BlockchainActor(var blockchain: Blockchain)(implicit config: Config) exten
       self.!(fromByteString(data))(sender())
     }
     case GetPeers => {
-      knownPeers.foreach { insa =>
+      connectedPeers.values.foreach { insa =>
         {
           sender() ! Tcp.Write(toByteString(insa))
         }

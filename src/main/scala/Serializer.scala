@@ -18,7 +18,8 @@ object Serializer {
     x.toJson.prettyPrint.getBytes
   def serializeWithName[T](x: T)(implicit format: JsonFormat[T]): Array[Byte] = {
     val EOI = '\uFFFF'
-    val jsonWithName = JsObject(Map("name" -> JsString(x.getClass.getName), "message" -> x.toJson))
+    val jsonWithName = JsObject(
+      Map("name" -> JsString(x.getClass.getSimpleName.stripSuffix("$")), "message" -> x.toJson))
       .prettyPrint
     (jsonWithName + EOI).getBytes
   }
@@ -94,8 +95,6 @@ object Serializer {
           .fields("name")
           .asInstanceOf[JsString]
           .value
-          .stripPrefix(s"${Config.projectName}.")
-          .stripSuffix("$")
       val protocol = className match {
         case "MinedBlock"         => MinedBlockProtocol
         case "RequestBlocksSince" => RequestBlocksSinceProtocol

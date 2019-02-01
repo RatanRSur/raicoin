@@ -61,7 +61,7 @@ class ActorNetworking extends fixture.FunSuiteLike with fixture.ConfigMapFixture
       val requestedBlocks = p
         .receiveWhile() { case Tcp.Received(data) => data }
         .toStream
-        .flatMap(data => Try(deserializeWithName(data.toArray).asInstanceOf[MinedBlock]).toOption)
+        .flatMap(data => Try(fromByteString(data).asInstanceOf[MinedBlock]).toOption)
       assert(
         requestedBlocks
           .exists(block => {
@@ -86,11 +86,12 @@ class ActorNetworking extends fixture.FunSuiteLike with fixture.ConfigMapFixture
     Thread.sleep(500)
     try {
       retriesOnTimeout(1) {
-        containerRef ! GetPeers
+        containerRef ! Tcp.Write(toByteString(GetPeers))
         val requestedPeers = p
           .receiveWhile() { case Tcp.Received(data) => data }
-          .flatMap(data => Try(deserialize[InetSocketAddress](data.toArray)).toOption)
-        assert(requestedPeers.length === 2)
+          .toStream
+          .flatMap(data => Try(fromByteString(data).asInstanceOf[InetSocketAddress]).toOption)
+        assert(requestedPeers.length === 3, requestedPeers.toArray.deep)
       }
     } finally {
       Await.result(system.terminate(), Duration.Inf)
