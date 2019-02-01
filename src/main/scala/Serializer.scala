@@ -83,10 +83,19 @@ object Serializer {
         case _ => deserializationError("InetSocketAddress expected")
       }
     }
+    implicit val GetPeersProtocol = new RootJsonFormat[GetPeers.type] {
+      def write(gp: GetPeers.type) = JsObject()
+      def read(value: JsValue)     = GetPeers
+    }
     def read(value: JsValue): AnyRef = {
       val jsObj = value.asJsObject
       val className =
-        jsObj.fields("name").asInstanceOf[JsString].value.stripPrefix(s"${Config.projectName}.")
+        jsObj
+          .fields("name")
+          .asInstanceOf[JsString]
+          .value
+          .stripPrefix(s"${Config.projectName}.")
+          .stripSuffix("$")
       val protocol = className match {
         case "MinedBlock"         => MinedBlockProtocol
         case "RequestBlocksSince" => RequestBlocksSinceProtocol
@@ -99,6 +108,7 @@ object Serializer {
         case "RootBlock"          => BlockJsonFormat
         case "Blockchain"         => BlockchainProtocol
         case "InetSocketAddress"  => InetSocketAddressProtocol
+        case "GetPeers"           => GetPeersProtocol
       }
       protocol.read(jsObj.fields("message"))
     }
