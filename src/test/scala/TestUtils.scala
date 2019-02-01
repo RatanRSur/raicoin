@@ -1,6 +1,7 @@
 package raicoin
 
-import akka.io.Tcp
+import akka.actor._
+import akka.io.{IO, Tcp}
 import akka.testkit.TestProbe
 import raicoin.Serializer._
 import scorex.crypto.signatures._
@@ -65,9 +66,27 @@ object TestUtils {
     new InetSocketAddress(InetAddress.getByName(splitStringRepr(0)), splitStringRepr(1).toInt)
   }
 
+  def dockerAddrAware(containerNames: Seq[String],
+                      config: Config,
+                      scalatestConfigMap: ConfigMap): Config = {
+    config.copy(
+      startingPeers =
+        config.startingPeers ++ containerNames.map(name => dockerAddr(name, scalatestConfigMap)))
+  }
+
   def dockerAddrAware(containerName: String,
                       config: Config,
                       scalatestConfigMap: ConfigMap): Config = {
-    config.copy(startingPeers = Seq(dockerAddr(containerName, scalatestConfigMap)))
+    dockerAddrAware(Seq(containerName), config, scalatestConfigMap)
+  }
+
+  def connectProbeToContainer(p: TestProbe, containerName: String, configMap: ConfigMap)(
+      implicit system: ActorSystem): ActorRef = {
+    implicit val defaultSender = p.testActor
+    IO(Tcp) ! Tcp.Connect(dockerAddr(containerName, configMap))
+    p.expectMsgType[Tcp.Connected]
+    val containerRef = p.sender()
+    containerRef ! Tcp.Register(p.testActor)
+    containerRef
   }
 }

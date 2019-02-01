@@ -3,7 +3,7 @@ package raicoin
 import java.net.InetSocketAddress
 
 import akka.actor._
-import akka.io.{IO, Tcp}
+import akka.io.Tcp
 import akka.testkit.TestProbe
 import org.scalatest._
 import TestUtils._
@@ -48,11 +48,7 @@ class ActorNetworking extends fixture.FunSuiteLike with fixture.ConfigMapFixture
 
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
-    IO(Tcp) ! Tcp.Connect(dockerAddr("mining", configMap))
-    p.expectMsgType[Tcp.Connected]
-    val bootstrapRef = p.sender()
-
-    bootstrapRef ! Tcp.Register(p.testActor)
+    val containerRef           = connectProbeToContainer(p, "mining", configMap)
 
     val testTx  = Transaction(vecnaPublicKey, tiamatPublicKey, 1)
     val testSTx = testTx.sign(vecnaPrivateKey)
@@ -60,7 +56,7 @@ class ActorNetworking extends fixture.FunSuiteLike with fixture.ConfigMapFixture
     Thread.sleep(500)
     actor ! testSTx
     Thread.sleep(500)
-    bootstrapRef ! Tcp.Write(toByteString(RequestBlocksSince(2)))
+    containerRef ! Tcp.Write(toByteString(RequestBlocksSince(2)))
     try {
       val requestedBlocks = p
         .receiveWhile() { case Tcp.Received(data) => data }
@@ -76,30 +72,28 @@ class ActorNetworking extends fixture.FunSuiteLike with fixture.ConfigMapFixture
     }
   }
 
-  ignore("B and C discover each other through A") { configMap =>
-    val systemA = ActorSystem("A")
-    val actorA =
-      systemA.actorOf(Props(new BlockchainActor(testChains(3))(bootstrapConfig)), "A")
+  test("peer discovery", DockerComposeTag) { configMap =>
+    implicit val system = ActorSystem("local")
+    val actor = system.actorOf(
+      Props(new BlockchainActor(testChains(3))(
+        dockerAddrAware(Seq("bootstrap", "mining"), vecnaConfig, configMap))))
 
-    val system = ActorSystem("B")
-    val actor  = system.actorOf(Props(new BlockchainActor(testChains(3))), "B")
-
-    val systemC = ActorSystem("C")
-    val actorC  = systemC.actorOf(Props(new BlockchainActor(testChains(3))), "C")
-
-    val p                      = TestProbe("p")(systemC)
+    val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
+
+    val containerRef = connectProbeToContainer(p, "bootstrap", configMap)
 
     Thread.sleep(500)
     try {
       retriesOnTimeout(1) {
-        actorC ! GetPeers
-        p.receiveN(2)
+        containerRef ! GetPeers
+        val requestedPeers = p
+          .receiveWhile() { case Tcp.Received(data) => data }
+          .flatMap(data => Try(deserialize[InetSocketAddress](data.toArray)).toOption)
+        assert(requestedPeers.length === 2)
       }
     } finally {
-      //Seq(actorA, actor, actorC).foreach(_ ! Disconnect)
-      Seq(systemA, system, systemC).foreach(system =>
-        Await.result(system.terminate(), Duration.Inf))
+      Await.result(system.terminate(), Duration.Inf)
     }
   }
 
