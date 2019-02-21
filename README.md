@@ -12,7 +12,9 @@
 
 ### Dependencies
 
+* `scala`
 * `sbt`
+* `docker`
 * `docker-compose`
 
 ### Testing
