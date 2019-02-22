@@ -23,3 +23,8 @@
     * `resourceGeneration/run`
     * `testOnly -- -l DockerComposeTag` (Run non-docker tests)
     * `dockerComposeTest`
+
+### Work in Progress and full of vulnerabilities!
+
+* Docker testing is very new and some tests intermittently fail. I'm currently making it more robust in the `peer-discovery` branch
+* There are many security flaws in the program that I have discovered over time. One fun one is that you can make someone else's node save or load the blockchain on demand over the network!
