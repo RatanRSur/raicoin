@@ -71,9 +71,9 @@ object Config {
           .valueName("<path to saved chain>")
           .action((x, c) => c.copy(load = x)),
         opt[String]("starting-peers")
-          .valueName("<hostname> <hostname> ...")
+          .valueName("<hostname>,<hostname>,...")
           .action((x, c) => {
-            val hostnames = x.split(' ')
+            val hostnames = x.split(',')
             val inetSocketAddresses =
               hostnames.map(hn => new InetSocketAddress(hn, Config.defaultPort))
             c.copy(startingPeers = inetSocketAddresses)

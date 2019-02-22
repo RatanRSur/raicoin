@@ -20,43 +20,38 @@ object DockerComposeTag extends Tag("DockerComposeTag")
 
 class ActorNetworking extends fixture.FunSuiteLike with fixture.ConfigMapFixture {
 
-  test("remote actor automatically finds local actor and updates itself", DockerComposeTag) {
-    configMap =>
-      val system = ActorSystem("local")
-      val actor = system.actorOf(
-        Props(
-          new BlockchainActor(testChains(0))(dockerAddrAware("bootstrap", vecnaConfig, configMap))))
+  test("nodes update themselves with new blocks", DockerComposeTag) { configMap =>
+    implicit val system        = ActorSystem("local")
+    val p                      = TestProbe("p")(system)
+    implicit val defaultSender = p.testActor
+    val containerRef           = connectProbeToContainer(p, "island", configMap)
 
-      val p                      = TestProbe("p")(system)
-      implicit val defaultSender = p.testActor
-
-      Thread.sleep(1000)
-      try {
-        retriesOnTimeout(1) {
-          actor ! Request(2)
-          expectTcpMessage(p, testChains(2)(2))
-        }
-      } finally {
-        Await.result(system.terminate(), Duration.Inf)
-      }
+    containerRef ! Tcp.Write(toByteString(RequestBlocksSince(2)))
+    try {
+      val requestedBlocks = p
+        .receiveWhile() { case Tcp.Received(data) => data }
+        .toStream
+        .flatMap(data => Try(fromByteString(data).asInstanceOf[MinedBlock]).toOption)
+      assert(requestedBlocks.exists(_ == testChains(2)(2)))
+    } finally {
+      Await.result(system.terminate(), Duration.Inf)
+    }
   }
 
   test("not mining actor forwards transaction to peers", DockerComposeTag) { configMap =>
     implicit val system = ActorSystem("local")
-    val actor = system.actorOf(
-      Props(new BlockchainActor(testChains(3))(dockerAddrAware("mining", vecnaConfig, configMap))))
 
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
-    val containerRef           = connectProbeToContainer(p, "mining", configMap)
+    val islandRef              = connectProbeToContainer(p, "island", configMap)
+    val miningRef              = connectProbeToContainer(p, "mining", configMap)
 
     val testTx  = Transaction(vecnaPublicKey, tiamatPublicKey, 1)
     val testSTx = testTx.sign(vecnaPrivateKey)
 
+    islandRef ! Tcp.Write(toByteString(testSTx))
+    miningRef ! Tcp.Write(toByteString(RequestBlocksSince(2)))
     Thread.sleep(500)
-    actor ! testSTx
-    Thread.sleep(500)
-    containerRef ! Tcp.Write(toByteString(RequestBlocksSince(2)))
     try {
       val requestedBlocks = p
         .receiveWhile() { case Tcp.Received(data) => data }
@@ -73,15 +68,11 @@ class ActorNetworking extends fixture.FunSuiteLike with fixture.ConfigMapFixture
   }
 
   test("peer discovery", DockerComposeTag) { configMap =>
-    implicit val system = ActorSystem("local")
-    val actor = system.actorOf(
-      Props(new BlockchainActor(testChains(3))(
-        dockerAddrAware(Seq("bootstrap", "mining"), vecnaConfig, configMap))))
-
+    implicit val system        = ActorSystem("local")
     val p                      = TestProbe("p")(system)
     implicit val defaultSender = p.testActor
 
-    val containerRef = connectProbeToContainer(p, "bootstrap", configMap)
+    val containerRef = connectProbeToContainer(p, "island", configMap)
 
     Thread.sleep(500)
     try {
@@ -91,7 +82,7 @@ class ActorNetworking extends fixture.FunSuiteLike with fixture.ConfigMapFixture
           .receiveWhile() { case Tcp.Received(data) => data }
           .toStream
           .flatMap(data => Try(fromByteString(data).asInstanceOf[InetSocketAddress]).toOption)
-        assert(requestedPeers.length === 3, requestedPeers.toArray.deep)
+        assert(requestedPeers.size > 1)
       }
     } finally {
       Await.result(system.terminate(), Duration.Inf)

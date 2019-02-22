@@ -62,7 +62,8 @@ object TestUtils {
   }
 
   def dockerAddr(containerName: String, configMap: ConfigMap): InetSocketAddress = {
-    val splitStringRepr = configMap(s"$containerName:6363").asInstanceOf[String].split(':')
+    val splitStringRepr =
+      configMap(s"$containerName:${Config.defaultPort}").asInstanceOf[String].split(':')
     new InetSocketAddress(InetAddress.getByName(splitStringRepr(0)), splitStringRepr(1).toInt)
   }
 
@@ -70,8 +71,9 @@ object TestUtils {
                       config: Config,
                       scalatestConfigMap: ConfigMap): Config = {
     config.copy(
-      startingPeers =
-        config.startingPeers ++ containerNames.map(name => dockerAddr(name, scalatestConfigMap)))
+      startingPeers = containerNames
+        .map(name => dockerAddr(name, scalatestConfigMap))
+        .foldLeft(config.startingPeers)(_ :+ _))
   }
 
   def dockerAddrAware(containerName: String,

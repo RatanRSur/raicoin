@@ -11,6 +11,13 @@ services:
     mining:
         image: raicoin
         environment:
-            - RUNTIME_ARGS=--bootstrap --load length3.chain --mine
+            - RUNTIME_ARGS=--non-interactive --load length3.chain --mine --starting-peers=bootstrap
+        ports:
+            - "0:6363"
+
+    island:
+        image: raicoin
+        environment:
+            - RUNTIME_ARGS=--non-interactive --load length1.chain --starting-peers=mining
         ports:
             - "0:6363"

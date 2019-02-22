@@ -19,7 +19,6 @@ case object Broadcast
 case class Request(index: Int)
 case class RequestBlocksSince(index: Int)
 case object GetPeers
-case object GetPeerInfo
 case class Save(directoryName: String)
 case class Saved(fileName: String)
 case class Load(directoryName: String)
@@ -60,6 +59,13 @@ class BlockchainActor(var blockchain: Blockchain)(implicit config: Config) exten
 
   if (config.bind) tcpManager ! Tcp.Bind(self, config.listeningSocketAddress)
   if (config.mine) self ! StartMining
+
+  system.scheduler.schedule(0.millis, 500.millis) {
+    connectedPeers.keys.foreach(peerRef => {
+      peerRef ! Tcp.Write(toByteString(RequestBlocksSince(blockchain.height)))
+      peerRef ! Tcp.Write(toByteString(GetPeers))
+    })
+  }
 
   def mineSignedTransaction(st: SignedTransaction) = {
     if (!seenTransactions.contains(st.transaction) && st.verify) {
@@ -133,6 +139,7 @@ class BlockchainActor(var blockchain: Blockchain)(implicit config: Config) exten
           tcpManager ! Tcp.Connect(kp)
         }
       }
+      knownPeers += insa
     }
     case Tcp.Connected(remoteAddress, _) => {
       logToPrompt(s"connected to $remoteAddress")
@@ -142,32 +149,35 @@ class BlockchainActor(var blockchain: Blockchain)(implicit config: Config) exten
 
       connectedPeers += (peerRef -> remoteAddress)
 
-      system.scheduler.schedule(0.millis, 500.millis) {
-        peerRef ! Tcp.Write(toByteString(RequestBlocksSince(blockchain.height)))
-        peerRef ! Tcp.Write(toByteString(GetPeers))
+    }
+    case Tcp.CommandFailed(attempt: Tcp.Connect) => {
+      if (connectedPeers.size == 0) {
+        logToPrompt(s"connection to ${attempt.remoteAddress} failed, retrying")
+        tcpManager ! attempt
       }
     }
-    case GetPeerInfo => {
-      mySocketAddress.foreach { insa =>
-        sender() ! Tcp.Write(toByteString(insa))
-      }
+    case _: Tcp.ConnectionClosed => {
+      connectedPeers -= sender()
     }
     case Tcp.Received(data) => {
       //println(s"${system.name}: ${fromByteString(data)}")
       self.!(fromByteString(data))(sender())
     }
     case GetPeers => {
-      connectedPeers.values.foreach { insa =>
+      knownPeers.foreach { insa =>
         {
           sender() ! Tcp.Write(toByteString(insa))
         }
       }
     }
     case insa: InetSocketAddress => {
-      if (!mySocketAddress.contains(insa) && !knownPeers.contains(insa)) {
-        logToPrompt(s"new peer: $insa")
+      logToPrompt(s"received peer: $insa")
+      if (!mySocketAddress.contains(insa) && !connectedPeers.values.toIterator.contains(insa)) {
+        logToPrompt(s"adding peer: $insa")
         knownPeers += insa
-        tcpManager ! Tcp.Connect(insa)
+        tcpManager ! Tcp.Connect(new InetSocketAddress(insa.getHostName, Config.defaultPort))
+      } else {
+        logToPrompt(s"discarding peer: $insa")
       }
     }
     case Save(directoryName) => {
